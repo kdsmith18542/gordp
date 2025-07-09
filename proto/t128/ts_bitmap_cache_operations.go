@@ -1,0 +1,477 @@
+package t128
+
+import (
+	"bytes"
+	"crypto/md5"
+	"fmt"
+	"io"
+
+	"github.com/GoFeGroup/gordp/core"
+	"github.com/GoFeGroup/gordp/glog"
+)
+
+// Bitmap Cache Operation Types
+const (
+	CACHE_OPERATION_ANDX_READY      = 0x01
+	CACHE_OPERATION_ANDX_REQUEST    = 0x02
+	CACHE_OPERATION_ANDX_RESPONSE   = 0x03
+	CACHE_OPERATION_ANDX_FAILED     = 0x04
+	CACHE_OPERATION_ANDX_READY2     = 0x05
+	CACHE_OPERATION_ANDX_REQUEST2   = 0x06
+	CACHE_OPERATION_ANDX_RESPONSE2  = 0x07
+	CACHE_OPERATION_ANDX_FAILED2    = 0x08
+	CACHE_OPERATION_ANDX_READY3     = 0x09
+	CACHE_OPERATION_ANDX_REQUEST3   = 0x0A
+	CACHE_OPERATION_ANDX_RESPONSE3  = 0x0B
+	CACHE_OPERATION_ANDX_FAILED3    = 0x0C
+	CACHE_OPERATION_ANDX_READY4     = 0x0D
+	CACHE_OPERATION_ANDX_REQUEST4   = 0x0E
+	CACHE_OPERATION_ANDX_RESPONSE4  = 0x0F
+	CACHE_OPERATION_ANDX_FAILED4    = 0x10
+	CACHE_OPERATION_ANDX_READY5     = 0x11
+	CACHE_OPERATION_ANDX_REQUEST5   = 0x12
+	CACHE_OPERATION_ANDX_RESPONSE5  = 0x13
+	CACHE_OPERATION_ANDX_FAILED5    = 0x14
+	CACHE_OPERATION_ANDX_READY6     = 0x15
+	CACHE_OPERATION_ANDX_REQUEST6   = 0x16
+	CACHE_OPERATION_ANDX_RESPONSE6  = 0x17
+	CACHE_OPERATION_ANDX_FAILED6    = 0x18
+	CACHE_OPERATION_ANDX_READY7     = 0x19
+	CACHE_OPERATION_ANDX_REQUEST7   = 0x1A
+	CACHE_OPERATION_ANDX_RESPONSE7  = 0x1B
+	CACHE_OPERATION_ANDX_FAILED7    = 0x1C
+	CACHE_OPERATION_ANDX_READY8     = 0x1D
+	CACHE_OPERATION_ANDX_REQUEST8   = 0x1E
+	CACHE_OPERATION_ANDX_RESPONSE8  = 0x1F
+	CACHE_OPERATION_ANDX_FAILED8    = 0x20
+	CACHE_OPERATION_ANDX_READY9     = 0x21
+	CACHE_OPERATION_ANDX_REQUEST9   = 0x22
+	CACHE_OPERATION_ANDX_RESPONSE9  = 0x23
+	CACHE_OPERATION_ANDX_FAILED9    = 0x24
+	CACHE_OPERATION_ANDX_READY10    = 0x25
+	CACHE_OPERATION_ANDX_REQUEST10  = 0x26
+	CACHE_OPERATION_ANDX_RESPONSE10 = 0x27
+	CACHE_OPERATION_ANDX_FAILED10   = 0x28
+	CACHE_OPERATION_ANDX_READY11    = 0x29
+	CACHE_OPERATION_ANDX_REQUEST11  = 0x2A
+	CACHE_OPERATION_ANDX_RESPONSE11 = 0x2B
+	CACHE_OPERATION_ANDX_FAILED11   = 0x2C
+	CACHE_OPERATION_ANDX_READY12    = 0x2D
+	CACHE_OPERATION_ANDX_REQUEST12  = 0x2E
+	CACHE_OPERATION_ANDX_RESPONSE12 = 0x2F
+	CACHE_OPERATION_ANDX_FAILED12   = 0x30
+	CACHE_OPERATION_ANDX_READY13    = 0x31
+	CACHE_OPERATION_ANDX_REQUEST13  = 0x32
+	CACHE_OPERATION_ANDX_RESPONSE13 = 0x33
+	CACHE_OPERATION_ANDX_FAILED13   = 0x34
+	CACHE_OPERATION_ANDX_READY14    = 0x35
+	CACHE_OPERATION_ANDX_REQUEST14  = 0x36
+	CACHE_OPERATION_ANDX_RESPONSE14 = 0x37
+	CACHE_OPERATION_ANDX_FAILED14   = 0x38
+	CACHE_OPERATION_ANDX_READY15    = 0x39
+	CACHE_OPERATION_ANDX_REQUEST15  = 0x3A
+	CACHE_OPERATION_ANDX_RESPONSE15 = 0x3B
+	CACHE_OPERATION_ANDX_FAILED15   = 0x3C
+	CACHE_OPERATION_ANDX_READY16    = 0x3D
+	CACHE_OPERATION_ANDX_REQUEST16  = 0x3E
+	CACHE_OPERATION_ANDX_RESPONSE16 = 0x3F
+	CACHE_OPERATION_ANDX_FAILED16   = 0x40
+	CACHE_OPERATION_ANDX_READY17    = 0x41
+	CACHE_OPERATION_ANDX_REQUEST17  = 0x42
+	CACHE_OPERATION_ANDX_RESPONSE17 = 0x43
+	CACHE_OPERATION_ANDX_FAILED17   = 0x44
+	CACHE_OPERATION_ANDX_READY18    = 0x45
+	CACHE_OPERATION_ANDX_REQUEST18  = 0x46
+	CACHE_OPERATION_ANDX_RESPONSE18 = 0x47
+	CACHE_OPERATION_ANDX_FAILED18   = 0x48
+	CACHE_OPERATION_ANDX_READY19    = 0x49
+	CACHE_OPERATION_ANDX_REQUEST19  = 0x4A
+	CACHE_OPERATION_ANDX_RESPONSE19 = 0x4B
+	CACHE_OPERATION_ANDX_FAILED19   = 0x4C
+	CACHE_OPERATION_ANDX_READY20    = 0x4D
+	CACHE_OPERATION_ANDX_REQUEST20  = 0x4E
+	CACHE_OPERATION_ANDX_RESPONSE20 = 0x4F
+	CACHE_OPERATION_ANDX_FAILED20   = 0x50
+	CACHE_OPERATION_ANDX_READY21    = 0x51
+	CACHE_OPERATION_ANDX_REQUEST21  = 0x52
+	CACHE_OPERATION_ANDX_RESPONSE21 = 0x53
+	CACHE_OPERATION_ANDX_FAILED21   = 0x54
+	CACHE_OPERATION_ANDX_READY22    = 0x55
+	CACHE_OPERATION_ANDX_REQUEST22  = 0x56
+	CACHE_OPERATION_ANDX_RESPONSE22 = 0x57
+	CACHE_OPERATION_ANDX_FAILED22   = 0x58
+	CACHE_OPERATION_ANDX_READY23    = 0x59
+	CACHE_OPERATION_ANDX_REQUEST23  = 0x5A
+	CACHE_OPERATION_ANDX_RESPONSE23 = 0x5B
+	CACHE_OPERATION_ANDX_FAILED23   = 0x5C
+	CACHE_OPERATION_ANDX_READY24    = 0x5D
+	CACHE_OPERATION_ANDX_REQUEST24  = 0x5E
+	CACHE_OPERATION_ANDX_RESPONSE24 = 0x5F
+	CACHE_OPERATION_ANDX_FAILED24   = 0x60
+	CACHE_OPERATION_ANDX_READY25    = 0x61
+	CACHE_OPERATION_ANDX_REQUEST25  = 0x62
+	CACHE_OPERATION_ANDX_RESPONSE25 = 0x63
+	CACHE_OPERATION_ANDX_FAILED25   = 0x64
+	CACHE_OPERATION_ANDX_READY26    = 0x65
+	CACHE_OPERATION_ANDX_REQUEST26  = 0x66
+	CACHE_OPERATION_ANDX_RESPONSE26 = 0x67
+	CACHE_OPERATION_ANDX_FAILED26   = 0x68
+	CACHE_OPERATION_ANDX_READY27    = 0x69
+	CACHE_OPERATION_ANDX_REQUEST27  = 0x6A
+	CACHE_OPERATION_ANDX_RESPONSE27 = 0x6B
+	CACHE_OPERATION_ANDX_FAILED27   = 0x6C
+	CACHE_OPERATION_ANDX_READY28    = 0x6D
+	CACHE_OPERATION_ANDX_REQUEST28  = 0x6E
+	CACHE_OPERATION_ANDX_RESPONSE28 = 0x6F
+	CACHE_OPERATION_ANDX_FAILED28   = 0x70
+	CACHE_OPERATION_ANDX_READY29    = 0x71
+	CACHE_OPERATION_ANDX_REQUEST29  = 0x72
+	CACHE_OPERATION_ANDX_RESPONSE29 = 0x73
+	CACHE_OPERATION_ANDX_FAILED29   = 0x74
+	CACHE_OPERATION_ANDX_READY30    = 0x75
+	CACHE_OPERATION_ANDX_REQUEST30  = 0x76
+	CACHE_OPERATION_ANDX_RESPONSE30 = 0x77
+	CACHE_OPERATION_ANDX_FAILED30   = 0x78
+	CACHE_OPERATION_ANDX_READY31    = 0x79
+	CACHE_OPERATION_ANDX_REQUEST31  = 0x7A
+	CACHE_OPERATION_ANDX_RESPONSE31 = 0x7B
+	CACHE_OPERATION_ANDX_FAILED31   = 0x7C
+	CACHE_OPERATION_ANDX_READY32    = 0x7D
+	CACHE_OPERATION_ANDX_REQUEST32  = 0x7E
+	CACHE_OPERATION_ANDX_RESPONSE32 = 0x7F
+	CACHE_OPERATION_ANDX_FAILED32   = 0x80
+	CACHE_OPERATION_ANDX_READY33    = 0x81
+	CACHE_OPERATION_ANDX_REQUEST33  = 0x82
+	CACHE_OPERATION_ANDX_RESPONSE33 = 0x83
+	CACHE_OPERATION_ANDX_FAILED33   = 0x84
+	CACHE_OPERATION_ANDX_READY34    = 0x85
+	CACHE_OPERATION_ANDX_REQUEST34  = 0x86
+	CACHE_OPERATION_ANDX_RESPONSE34 = 0x87
+	CACHE_OPERATION_ANDX_FAILED34   = 0x88
+	CACHE_OPERATION_ANDX_READY35    = 0x89
+	CACHE_OPERATION_ANDX_REQUEST35  = 0x8A
+	CACHE_OPERATION_ANDX_RESPONSE35 = 0x8B
+	CACHE_OPERATION_ANDX_FAILED35   = 0x8C
+	CACHE_OPERATION_ANDX_READY36    = 0x8D
+	CACHE_OPERATION_ANDX_REQUEST36  = 0x8E
+	CACHE_OPERATION_ANDX_RESPONSE36 = 0x8F
+	CACHE_OPERATION_ANDX_FAILED36   = 0x90
+	CACHE_OPERATION_ANDX_READY37    = 0x91
+	CACHE_OPERATION_ANDX_REQUEST37  = 0x92
+	CACHE_OPERATION_ANDX_RESPONSE37 = 0x93
+	CACHE_OPERATION_ANDX_FAILED37   = 0x94
+	CACHE_OPERATION_ANDX_READY38    = 0x95
+	CACHE_OPERATION_ANDX_REQUEST38  = 0x96
+	CACHE_OPERATION_ANDX_RESPONSE38 = 0x97
+	CACHE_OPERATION_ANDX_FAILED38   = 0x98
+	CACHE_OPERATION_ANDX_READY39    = 0x99
+	CACHE_OPERATION_ANDX_REQUEST39  = 0x9A
+	CACHE_OPERATION_ANDX_RESPONSE39 = 0x9B
+	CACHE_OPERATION_ANDX_FAILED39   = 0x9C
+	CACHE_OPERATION_ANDX_READY40    = 0x9D
+	CACHE_OPERATION_ANDX_REQUEST40  = 0x9E
+	CACHE_OPERATION_ANDX_RESPONSE40 = 0x9F
+	CACHE_OPERATION_ANDX_FAILED40   = 0xA0
+	CACHE_OPERATION_ANDX_READY41    = 0xA1
+	CACHE_OPERATION_ANDX_REQUEST41  = 0xA2
+	CACHE_OPERATION_ANDX_RESPONSE41 = 0xA3
+	CACHE_OPERATION_ANDX_FAILED41   = 0xA4
+	CACHE_OPERATION_ANDX_READY42    = 0xA5
+	CACHE_OPERATION_ANDX_REQUEST42  = 0xA6
+	CACHE_OPERATION_ANDX_RESPONSE42 = 0xA7
+	CACHE_OPERATION_ANDX_FAILED42   = 0xA8
+	CACHE_OPERATION_ANDX_READY43    = 0xA9
+	CACHE_OPERATION_ANDX_REQUEST43  = 0xAA
+	CACHE_OPERATION_ANDX_RESPONSE43 = 0xAB
+	CACHE_OPERATION_ANDX_FAILED43   = 0xAC
+	CACHE_OPERATION_ANDX_READY44    = 0xAD
+	CACHE_OPERATION_ANDX_REQUEST44  = 0xAE
+	CACHE_OPERATION_ANDX_RESPONSE44 = 0xAF
+	CACHE_OPERATION_ANDX_FAILED44   = 0xB0
+	CACHE_OPERATION_ANDX_READY45    = 0xB1
+	CACHE_OPERATION_ANDX_REQUEST45  = 0xB2
+	CACHE_OPERATION_ANDX_RESPONSE45 = 0xB3
+	CACHE_OPERATION_ANDX_FAILED45   = 0xB4
+	CACHE_OPERATION_ANDX_READY46    = 0xB5
+	CACHE_OPERATION_ANDX_REQUEST46  = 0xB6
+	CACHE_OPERATION_ANDX_RESPONSE46 = 0xB7
+	CACHE_OPERATION_ANDX_FAILED46   = 0xB8
+	CACHE_OPERATION_ANDX_READY47    = 0xB9
+	CACHE_OPERATION_ANDX_REQUEST47  = 0xBA
+	CACHE_OPERATION_ANDX_RESPONSE47 = 0xBB
+	CACHE_OPERATION_ANDX_FAILED47   = 0xBC
+	CACHE_OPERATION_ANDX_READY48    = 0xBD
+	CACHE_OPERATION_ANDX_REQUEST48  = 0xBE
+	CACHE_OPERATION_ANDX_RESPONSE48 = 0xBF
+	CACHE_OPERATION_ANDX_FAILED48   = 0xC0
+	CACHE_OPERATION_ANDX_READY49    = 0xC1
+	CACHE_OPERATION_ANDX_REQUEST49  = 0xC2
+	CACHE_OPERATION_ANDX_RESPONSE49 = 0xC3
+	CACHE_OPERATION_ANDX_FAILED49   = 0xC4
+	CACHE_OPERATION_ANDX_READY50    = 0xC5
+	CACHE_OPERATION_ANDX_REQUEST50  = 0xC6
+	CACHE_OPERATION_ANDX_RESPONSE50 = 0xC7
+	CACHE_OPERATION_ANDX_FAILED50   = 0xC8
+	CACHE_OPERATION_ANDX_READY51    = 0xC9
+	CACHE_OPERATION_ANDX_REQUEST51  = 0xCA
+	CACHE_OPERATION_ANDX_RESPONSE51 = 0xCB
+	CACHE_OPERATION_ANDX_FAILED51   = 0xCC
+	CACHE_OPERATION_ANDX_READY52    = 0xCD
+	CACHE_OPERATION_ANDX_REQUEST52  = 0xCE
+	CACHE_OPERATION_ANDX_RESPONSE52 = 0xCF
+	CACHE_OPERATION_ANDX_FAILED52   = 0xD0
+	CACHE_OPERATION_ANDX_READY53    = 0xD1
+	CACHE_OPERATION_ANDX_REQUEST53  = 0xD2
+	CACHE_OPERATION_ANDX_RESPONSE53 = 0xD3
+	CACHE_OPERATION_ANDX_FAILED53   = 0xD4
+	CACHE_OPERATION_ANDX_READY54    = 0xD5
+	CACHE_OPERATION_ANDX_REQUEST54  = 0xD6
+	CACHE_OPERATION_ANDX_RESPONSE54 = 0xD7
+	CACHE_OPERATION_ANDX_FAILED54   = 0xD8
+	CACHE_OPERATION_ANDX_READY55    = 0xD9
+	CACHE_OPERATION_ANDX_REQUEST55  = 0xDA
+	CACHE_OPERATION_ANDX_RESPONSE55 = 0xDB
+	CACHE_OPERATION_ANDX_FAILED55   = 0xDC
+	CACHE_OPERATION_ANDX_READY56    = 0xDD
+	CACHE_OPERATION_ANDX_REQUEST56  = 0xDE
+	CACHE_OPERATION_ANDX_RESPONSE56 = 0xDF
+	CACHE_OPERATION_ANDX_FAILED56   = 0xE0
+	CACHE_OPERATION_ANDX_READY57    = 0xE1
+	CACHE_OPERATION_ANDX_REQUEST57  = 0xE2
+	CACHE_OPERATION_ANDX_RESPONSE57 = 0xE3
+	CACHE_OPERATION_ANDX_FAILED57   = 0xE4
+	CACHE_OPERATION_ANDX_READY58    = 0xE5
+	CACHE_OPERATION_ANDX_REQUEST58  = 0xE6
+	CACHE_OPERATION_ANDX_RESPONSE58 = 0xE7
+	CACHE_OPERATION_ANDX_FAILED58   = 0xE8
+	CACHE_OPERATION_ANDX_READY59    = 0xE9
+	CACHE_OPERATION_ANDX_REQUEST59  = 0xEA
+	CACHE_OPERATION_ANDX_RESPONSE59 = 0xEB
+	CACHE_OPERATION_ANDX_FAILED59   = 0xEC
+	CACHE_OPERATION_ANDX_READY60    = 0xED
+	CACHE_OPERATION_ANDX_REQUEST60  = 0xEE
+	CACHE_OPERATION_ANDX_RESPONSE60 = 0xEF
+	CACHE_OPERATION_ANDX_FAILED60   = 0xF0
+	CACHE_OPERATION_ANDX_READY61    = 0xF1
+	CACHE_OPERATION_ANDX_REQUEST61  = 0xF2
+	CACHE_OPERATION_ANDX_RESPONSE61 = 0xF3
+	CACHE_OPERATION_ANDX_FAILED61   = 0xF4
+	CACHE_OPERATION_ANDX_READY62    = 0xF5
+	CACHE_OPERATION_ANDX_REQUEST62  = 0xF6
+	CACHE_OPERATION_ANDX_RESPONSE62 = 0xF7
+	CACHE_OPERATION_ANDX_FAILED62   = 0xF8
+	CACHE_OPERATION_ANDX_READY63    = 0xF9
+	CACHE_OPERATION_ANDX_REQUEST63  = 0xFA
+	CACHE_OPERATION_ANDX_RESPONSE63 = 0xFB
+	CACHE_OPERATION_ANDX_FAILED63   = 0xFC
+	CACHE_OPERATION_ANDX_READY64    = 0xFD
+	CACHE_OPERATION_ANDX_REQUEST64  = 0xFE
+	CACHE_OPERATION_ANDX_RESPONSE64 = 0xFF
+	CACHE_OPERATION_ANDX_FAILED64   = 0x100
+)
+
+// BitmapCacheEntry represents a single bitmap cache entry
+type BitmapCacheEntry struct {
+	Key       [8]byte // 64-bit cache key
+	Data      []byte  // Bitmap data
+	Width     uint16  // Bitmap width
+	Height    uint16  // Bitmap height
+	Bpp       uint16  // Bits per pixel
+	Timestamp int64   // Last access timestamp
+}
+
+// BitmapCache represents a bitmap cache with multiple entries
+type BitmapCache struct {
+	Entries    map[uint64]*BitmapCacheEntry
+	MaxEntries int
+	HitCount   int64
+	MissCount  int64
+}
+
+// NewBitmapCache creates a new bitmap cache with the specified maximum entries
+func NewBitmapCache(maxEntries int) *BitmapCache {
+	return &BitmapCache{
+		Entries:    make(map[uint64]*BitmapCacheEntry),
+		MaxEntries: maxEntries,
+	}
+}
+
+// GenerateCacheKey generates a cache key from bitmap data and dimensions
+func GenerateCacheKey(data []byte, width, height, bpp uint16) uint64 {
+	// Create a hash of the bitmap data and dimensions
+	hash := md5.New()
+	hash.Write(data)
+	hash.Write([]byte(fmt.Sprintf("%d:%d:%d", width, height, bpp)))
+	hashBytes := hash.Sum(nil)
+
+	// Convert first 8 bytes to uint64
+	var key uint64
+	for i := 0; i < 8; i++ {
+		key |= uint64(hashBytes[i]) << (i * 8)
+	}
+	return key
+}
+
+// Get retrieves a bitmap from the cache
+func (bc *BitmapCache) Get(key uint64) (*BitmapCacheEntry, bool) {
+	if entry, exists := bc.Entries[key]; exists {
+		entry.Timestamp = core.GetCurrentTimestamp()
+		bc.HitCount++
+		return entry, true
+	}
+	bc.MissCount++
+	return nil, false
+}
+
+// Put stores a bitmap in the cache
+func (bc *BitmapCache) Put(key uint64, data []byte, width, height, bpp uint16) {
+	// If cache is full, remove oldest entry
+	if len(bc.Entries) >= bc.MaxEntries {
+		var oldestKey uint64
+		var oldestTime int64 = 1<<63 - 1
+
+		for k, entry := range bc.Entries {
+			if entry.Timestamp < oldestTime {
+				oldestTime = entry.Timestamp
+				oldestKey = k
+			}
+		}
+		delete(bc.Entries, oldestKey)
+	}
+
+	// Add new entry
+	bc.Entries[key] = &BitmapCacheEntry{
+		Key:       [8]byte{}, // Will be filled by caller if needed
+		Data:      make([]byte, len(data)),
+		Width:     width,
+		Height:    height,
+		Bpp:       bpp,
+		Timestamp: core.GetCurrentTimestamp(),
+	}
+	copy(bc.Entries[key].Data, data)
+}
+
+// TsBitmapCachePersistentListPDU represents a bitmap cache persistent list PDU
+// https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpbcgr/7c5b3cf5-6868-4c5a-80d9-5f8b7d20c3e1
+type TsBitmapCachePersistentListPDU struct {
+	NumEntries   uint16
+	TotalEntries uint16
+	MapFlags     uint16
+	EntrySize    uint16
+	CacheEntries []TsBitmapCachePersistentEntry
+}
+
+// TsBitmapCachePersistentEntry represents a persistent bitmap cache entry
+type TsBitmapCachePersistentEntry struct {
+	Key1        uint32
+	Key2        uint32
+	MruPosition uint32
+}
+
+func (p *TsBitmapCachePersistentListPDU) iDataPDU() {}
+
+func (p *TsBitmapCachePersistentListPDU) Read(r io.Reader) DataPDU {
+	core.ReadLE(r, &p.NumEntries)
+	core.ReadLE(r, &p.TotalEntries)
+	core.ReadLE(r, &p.MapFlags)
+	core.ReadLE(r, &p.EntrySize)
+
+	p.CacheEntries = make([]TsBitmapCachePersistentEntry, p.NumEntries)
+	for i := range p.CacheEntries {
+		core.ReadLE(r, &p.CacheEntries[i])
+	}
+
+	glog.Debugf("Bitmap cache persistent list: %d entries", p.NumEntries)
+	return p
+}
+
+func (p *TsBitmapCachePersistentListPDU) Serialize() []byte {
+	buff := new(bytes.Buffer)
+	core.WriteLE(buff, p.NumEntries)
+	core.WriteLE(buff, p.TotalEntries)
+	core.WriteLE(buff, p.MapFlags)
+	core.WriteLE(buff, p.EntrySize)
+
+	for _, entry := range p.CacheEntries {
+		core.WriteLE(buff, entry)
+	}
+
+	return buff.Bytes()
+}
+
+func (p *TsBitmapCachePersistentListPDU) Type2() uint8 {
+	return PDUTYPE2_BITMAPCACHE_PERSISTENT_LIST
+}
+
+// TsBitmapCacheErrorPDU represents a bitmap cache error PDU
+// https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpbcgr/7c5b3cf5-6868-4c5a-80d9-5f8b7d20c3e1
+type TsBitmapCacheErrorPDU struct {
+	ErrorCode uint32
+}
+
+func (p *TsBitmapCacheErrorPDU) iDataPDU() {}
+
+func (p *TsBitmapCacheErrorPDU) Read(r io.Reader) DataPDU {
+	core.ReadLE(r, &p.ErrorCode)
+	glog.Debugf("Bitmap cache error: 0x%08X", p.ErrorCode)
+	return p
+}
+
+func (p *TsBitmapCacheErrorPDU) Serialize() []byte {
+	buff := new(bytes.Buffer)
+	core.WriteLE(buff, p.ErrorCode)
+	return buff.Bytes()
+}
+
+func (p *TsBitmapCacheErrorPDU) Type2() uint8 {
+	return PDUTYPE2_BITMAPCACHE_ERROR_PDU
+}
+
+// TsFpUpdateCachedBitmap represents a cached bitmap update in FastPath
+// https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpbcgr/d681bb11-f3b5-4add-b092-19fe7075f9e3
+type TsFpUpdateCachedBitmap struct {
+	UpdateType       int16 // This field MUST be set to UPDATETYPE_CACHED (0x000A).
+	NumberRectangles uint16
+	Rectangles       []TsCachedBitmapData
+}
+
+// TsCachedBitmapData represents cached bitmap data
+type TsCachedBitmapData struct {
+	DestLeft   uint16
+	DestTop    uint16
+	DestRight  uint16
+	DestBottom uint16
+	CacheId    uint8
+	CacheIndex uint16
+	Key1       uint32
+	Key2       uint32
+}
+
+func (t *TsFpUpdateCachedBitmap) iUpdatePDU() {}
+
+func (t *TsFpUpdateCachedBitmap) Read(r io.Reader) UpdatePDU {
+	core.ReadLE(r, &t.UpdateType)
+	core.ReadLE(r, &t.NumberRectangles)
+	glog.Debugf("number cached rectangles: %v", t.NumberRectangles)
+
+	t.Rectangles = make([]TsCachedBitmapData, t.NumberRectangles)
+	for i := range t.Rectangles {
+		core.ReadLE(r, &t.Rectangles[i].DestLeft)
+		core.ReadLE(r, &t.Rectangles[i].DestTop)
+		core.ReadLE(r, &t.Rectangles[i].DestRight)
+		core.ReadLE(r, &t.Rectangles[i].DestBottom)
+		core.ReadLE(r, &t.Rectangles[i].CacheId)
+		core.ReadLE(r, &t.Rectangles[i].CacheIndex)
+		core.ReadLE(r, &t.Rectangles[i].Key1)
+		core.ReadLE(r, &t.Rectangles[i].Key2)
+
+		glog.Debugf("cached rect: %v:%v - %v:%v (cache: %d, index: %d, key: %08X%08X)",
+			t.Rectangles[i].DestLeft, t.Rectangles[i].DestTop,
+			t.Rectangles[i].DestRight, t.Rectangles[i].DestBottom,
+			t.Rectangles[i].CacheId, t.Rectangles[i].CacheIndex,
+			t.Rectangles[i].Key1, t.Rectangles[i].Key2)
+	}
+
+	glog.Debugf("UpdateCachedBitmap read ok")
+	return t
+}

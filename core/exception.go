@@ -41,7 +41,7 @@ func Throw(e any) {
 }
 
 func Throwf(format string, args ...any) {
-	str := fmt.Sprintf(format, args)
+	str := fmt.Sprintf(format, args...)
 	Throw(str)
 }
 

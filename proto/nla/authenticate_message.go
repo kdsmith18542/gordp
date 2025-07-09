@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"crypto/md5"
 	"crypto/rc4"
-	"github.com/GoFeGroup/gordp/core"
 	"io"
+
+	"github.com/GoFeGroup/gordp/core"
 )
 
 // AuthenticateMessage 认证信息
@@ -107,11 +108,17 @@ var (
 
 // CalcChallenge
 // https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/c0250a97-2940-40c7-82fb-20d208c71e96
-func (m *AuthenticateMessage) CalcChallenge(negotiate *NegotiateMessage, challenge *ChallengeMessage) *AuthenticateMessage {
+func (m *AuthenticateMessage) CalcChallenge(negotiate *NegotiateMessage, challenge *ChallengeMessage, channelBindingToken []byte) *AuthenticateMessage {
 	respKeyNT := core.NTOWFv2(m.Optional.pass, m.Optional.user, "")
 	respKeyLM := core.LMOWFv2(m.Optional.pass, m.Optional.user, "")
 
 	ntChallenge := NewNTLMv2ClientChallenge(challenge.getTargetInfo())
+
+	// Add channel binding token if provided
+	if len(channelBindingToken) > 0 {
+		ntChallenge.AddChannelBinding(channelBindingToken)
+	}
+
 	ccData := ntChallenge.Serialize()
 
 	serverChallenge := challenge.Must.ServerChallenge[:]

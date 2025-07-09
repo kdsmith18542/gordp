@@ -18,10 +18,17 @@ func (c *Client) switchNLA() {
 	challenge.Read(c.stream)
 	glog.Debugf("recv challenge message ok")
 
+	// Get channel binding token from TLS connection
+	var channelBindingToken []byte
+	if c.selectProtocol == connPdu.PROTOCOL_HYBRID || c.selectProtocol == connPdu.PROTOCOL_SSL {
+		channelBindingToken = c.stream.ChannelBindingToken()
+		glog.Debugf("channel binding token: %x", channelBindingToken)
+	}
+
 	// 发送 AuthenticateMessage
 	pk := c.stream.PubKey()
 	auth := nla.NewAuthenticateMessage(c.option.UserName, c.option.Password)
-	auth.CalcChallenge(negotiate, challenge).Sign(pk).Write(c.stream)
+	auth.CalcChallenge(negotiate, challenge, channelBindingToken).Sign(pk).Write(c.stream)
 
 	// 读取 PubKeyAuth
 	tsReq := &nla.TSRequest{}

@@ -49,6 +49,10 @@ func (p *TsFpUpdatePDU) Read(r io.Reader) PDU {
 	switch p.Header.UpdateCode {
 	case FASTPATH_UPDATETYPE_BITMAP:
 		p.PDU = (&TsFpUpdateBitmap{}).Read(bytes.NewReader(data))
+	case FASTPATH_UPDATETYPE_CACHED:
+		p.PDU = (&TsFpUpdateCachedBitmap{}).Read(bytes.NewReader(data))
+	case FASTPATH_UPDATETYPE_SURFCMDS:
+		p.PDU = (&TsFpUpdateSurfaceCommands{}).Read(bytes.NewReader(data))
 	default:
 		glog.Warnf("updateCode [%x] not implement", p.Header.UpdateCode)
 	}

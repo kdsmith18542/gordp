@@ -2,6 +2,7 @@ package nla
 
 import (
 	"bytes"
+
 	"github.com/GoFeGroup/gordp/core"
 )
 
@@ -30,6 +31,25 @@ func NewNTLMv2ClientChallenge(serverInfo, timestamp []byte) *NTLMv2ClientChallen
 	copy(clientChallenge.Must.ChallengeFromClient[:], core.Random(8))
 	clientChallenge.Optional.AvPairs = ReadAvPairs(serverInfo)
 	return clientChallenge
+}
+
+// AddChannelBinding adds a channel binding token to the client challenge
+func (c *NTLMv2ClientChallenge) AddChannelBinding(channelBindingToken []byte) {
+	if len(channelBindingToken) > 0 {
+		// Create channel binding AVPair
+		channelBindingPair := CreateChannelBindingAVPair(channelBindingToken)
+
+		// Insert channel binding before the EOL pair
+		var newAvPairs AVPairs
+		for _, pair := range c.Optional.AvPairs {
+			if pair.Must.Id == MsvAvEOL {
+				// Insert channel binding before EOL
+				newAvPairs = append(newAvPairs, channelBindingPair)
+			}
+			newAvPairs = append(newAvPairs, pair)
+		}
+		c.Optional.AvPairs = newAvPairs
+	}
 }
 
 func (c *NTLMv2ClientChallenge) Serialize() []byte {

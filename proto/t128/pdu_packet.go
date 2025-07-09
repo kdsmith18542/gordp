@@ -35,11 +35,13 @@ var pduMap = map[uint16]PDU{
 }
 
 var pduMap2 = map[uint8]DataPDU{
-	PDUTYPE2_SYNCHRONIZE:        &TsSynchronizePduData{},
-	PDUTYPE2_CONTROL:            &TsControlPDU{},
-	PDUTYPE2_FONTMAP:            &TsFontMapPDU{},
-	PDUTYPE2_SET_ERROR_INFO_PDU: &TsSetErrorInfoPDU{},
-	PDUTYPE2_SAVE_SESSION_INFO:  &TsSaveSessionInfoPDU{},
+	PDUTYPE2_SYNCHRONIZE:                 &TsSynchronizePduData{},
+	PDUTYPE2_CONTROL:                     &TsControlPDU{},
+	PDUTYPE2_FONTMAP:                     &TsFontMapPDU{},
+	PDUTYPE2_SET_ERROR_INFO_PDU:          &TsSetErrorInfoPDU{},
+	PDUTYPE2_SAVE_SESSION_INFO:           &TsSaveSessionInfoPDU{},
+	PDUTYPE2_BITMAPCACHE_PERSISTENT_LIST: &TsBitmapCachePersistentListPDU{},
+	PDUTYPE2_BITMAPCACHE_ERROR_PDU:       &TsBitmapCacheErrorPDU{},
 }
 
 func readPDU(r io.Reader, typ uint16) PDU {

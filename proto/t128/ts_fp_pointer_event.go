@@ -3,9 +3,8 @@ package t128
 import (
 	"bytes"
 
-	"github.com/GoFeGroup/gordp/glog"
-
 	"github.com/GoFeGroup/gordp/core"
+	"github.com/GoFeGroup/gordp/glog"
 )
 
 const (
@@ -20,9 +19,32 @@ const (
 
 	// Mouse button events:
 	PTRFLAGS_DOWN    = 0x8000
-	PTRFLAGS_BUTTON1 = 0x1000
-	PTRFLAGS_BUTTON2 = 0x2000
-	PTRFLAGS_BUTTON3 = 0x4000
+	PTRFLAGS_BUTTON1 = 0x1000 // Left button
+	PTRFLAGS_BUTTON2 = 0x2000 // Right button
+	PTRFLAGS_BUTTON3 = 0x4000 // Middle button
+	PTRFLAGS_BUTTON4 = 0x0100 // X1 button (back)
+	PTRFLAGS_BUTTON5 = 0x0200 // X2 button (forward)
+)
+
+// MouseButton represents different mouse buttons
+type MouseButton int
+
+const (
+	MouseButtonLeft MouseButton = iota
+	MouseButtonRight
+	MouseButtonMiddle
+	MouseButtonX1
+	MouseButtonX2
+)
+
+// ScrollDirection represents scroll directions
+type ScrollDirection int
+
+const (
+	ScrollUp ScrollDirection = iota
+	ScrollDown
+	ScrollLeft
+	ScrollRight
 )
 
 // TsFpPointerEvent
@@ -42,4 +64,67 @@ func (e *TsFpPointerEvent) Serialize() []byte {
 
 	glog.Debugf("mouse event: %v - %x", buff.Len(), buff.Bytes())
 	return buff.Bytes()
+}
+
+// NewFastPathPointerEvent creates a new pointer event
+func NewFastPathPointerEvent(pointerFlags uint16, xPos, yPos uint16) *TsFpPointerEvent {
+	return &TsFpPointerEvent{
+		PointerFlags: pointerFlags,
+		XPos:         xPos,
+		YPos:         yPos,
+	}
+}
+
+// NewFastPathMouseMoveEvent creates a mouse movement event
+func NewFastPathMouseMoveEvent(xPos, yPos uint16) *TsFpPointerEvent {
+	return NewFastPathPointerEvent(PTRFLAGS_MOVE, xPos, yPos)
+}
+
+// NewFastPathMouseButtonEvent creates a mouse button event
+func NewFastPathMouseButtonEvent(button MouseButton, down bool, xPos, yPos uint16) *TsFpPointerEvent {
+	var flags uint16
+	switch button {
+	case MouseButtonLeft:
+		flags = PTRFLAGS_BUTTON1
+	case MouseButtonRight:
+		flags = PTRFLAGS_BUTTON2
+	case MouseButtonMiddle:
+		flags = PTRFLAGS_BUTTON3
+	case MouseButtonX1:
+		flags = PTRFLAGS_BUTTON4
+	case MouseButtonX2:
+		flags = PTRFLAGS_BUTTON5
+	}
+
+	if down {
+		flags |= PTRFLAGS_DOWN
+	}
+
+	return NewFastPathPointerEvent(flags, xPos, yPos)
+}
+
+// NewFastPathMouseWheelEvent creates a mouse wheel event
+func NewFastPathMouseWheelEvent(wheelDelta int16, xPos, yPos uint16) *TsFpPointerEvent {
+	flags := uint16(PTRFLAGS_WHEEL)
+	if wheelDelta < 0 {
+		flags |= PTRFLAGS_WHEEL_NEGATIVE
+	}
+
+	// Convert wheel delta to rotation value (0-255)
+	rotation := uint16(wheelDelta) & WheelRotationMask
+
+	return NewFastPathPointerEvent(flags|rotation, xPos, yPos)
+}
+
+// NewFastPathMouseHorizontalWheelEvent creates a horizontal mouse wheel event
+func NewFastPathMouseHorizontalWheelEvent(wheelDelta int16, xPos, yPos uint16) *TsFpPointerEvent {
+	flags := uint16(PTRFLAGS_HWHEEL)
+	if wheelDelta < 0 {
+		flags |= PTRFLAGS_WHEEL_NEGATIVE
+	}
+
+	// Convert wheel delta to rotation value (0-255)
+	rotation := uint16(wheelDelta) & WheelRotationMask
+
+	return NewFastPathPointerEvent(flags|rotation, xPos, yPos)
 }

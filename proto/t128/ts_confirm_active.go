@@ -2,10 +2,11 @@ package t128
 
 import (
 	"bytes"
+	"io"
+
 	"github.com/GoFeGroup/gordp/core"
 	"github.com/GoFeGroup/gordp/glog"
 	"github.com/GoFeGroup/gordp/proto/capability"
-	"io"
 )
 
 // TsConfirmActivePduData
@@ -66,13 +67,23 @@ func NewTsConfirmActivePduData(demandActivePdu *TsDemandActivePduData) *TsConfir
 			capability.NewTsGeneralCapabilitySet(),
 			capability.NewTsBitmapCapabilitySet(),
 			capability.NewTsOrderCapabilitySet(),
-			&capability.TsBitmapCacheCapabilitySet{},
+			&capability.TsBitmapCacheCapabilitySet{
+				Cache0Entries:         600,
+				Cache0MaximumCellSize: 256,
+				Cache1Entries:         300,
+				Cache1MaximumCellSize: 1024,
+				Cache2Entries:         100,
+				Cache2MaximumCellSize: 4096,
+			},
 			&capability.TsPointerCapabilitySet{ColorPointerCacheSize: 20},
 			capability.NewTsInputCapabilitySet(),
 			&capability.TsBrushCapabilitySet{},
 			&capability.TsGlyphCacheCapabilitySet{},
 			&capability.TsOffscreenCapabilitySet{},
-			&capability.TsVirtualChannelCapabilitySet{},
+			&capability.TsVirtualChannelCapabilitySet{
+				Flags:       0,
+				VCChunkSize: 0x4000, // 16384 bytes, production default
+			},
 			&capability.TsSoundCapabilitySet{},
 			&capability.TsMultiFragmentUpdateCapabilitySet{},
 			capability.NewRemoteProgramsCapabilitySet(),

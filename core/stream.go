@@ -3,6 +3,7 @@ package core
 import (
 	"bufio"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -62,8 +63,30 @@ func (s *Stream) PubKey() []byte {
 	return nil
 }
 
+// ChannelBindingToken computes the channel binding token from the TLS certificate
+// This implements RFC 5929 Channel Binding for TLS
+func (s *Stream) ChannelBindingToken() []byte {
+	if c, ok := s.c.(*tls.Conn); ok {
+		// Create the channel binding token as specified in RFC 5929
+		// For TLS, we use the "tls-server-end-point" channel binding type
+		// The token is: SHA256(certificate)
+		cert := c.ConnectionState().PeerCertificates[0]
+
+		// Compute SHA256 hash of the certificate
+		hash := sha256.Sum256(cert.Raw)
+		return hash[:]
+	}
+	Throw(fmt.Errorf("not tls connection"))
+	return nil
+}
+
 func (s *Stream) Close() {
 	_ = s.c.Close()
+}
+
+// GetCurrentTimestamp returns the current timestamp in milliseconds since epoch
+func GetCurrentTimestamp() int64 {
+	return time.Now().UnixMilli()
 }
 
 func NewStream(addr string, tmOut time.Duration) *Stream {

@@ -96,31 +96,52 @@ func (m *BitMap) LoadRDP60(option *Option) *BitMap {
 	na := ((formatHeader & 0x20) >> 5) == 1 //Indicates if an alpha plane is present.
 	//glog.Debugf("na: %v", na)
 
-	if cll != 0 && cs == true {
-		core.ThrowError("not implement [cll or cs]")
-	}
-
-	if !rle {
-		core.ThrowError("not implement [!rle]")
-	}
-
 	w, h := option.Width, option.Height
 
-	// RLE Decompression
-	if !na {
-		//glog.Debugf("has Alpha")
-		decompressColorPlane(r, w, h) // read rle alpha plane
+	var alpha []byte
+	if na {
+		// Alpha plane present
+		if rle {
+			alpha = decompressColorPlane(r, w, h)
+		} else {
+			// Uncompressed alpha plane
+			alpha = ReadBytes(r, w*h)
+		}
 	}
-	cr := decompressColorPlane(r, w, h) // read rle alpha plane
-	cg := decompressColorPlane(r, w, h) // read rle alpha plane
-	cb := decompressColorPlane(r, w, h) // read rle alpha plane
+
+	var cr, cg, cb []byte
+	if rle {
+		cr = decompressColorPlane(r, w, h)
+		cg = decompressColorPlane(r, w, h)
+		cb = decompressColorPlane(r, w, h)
+	} else {
+		// Uncompressed color planes
+		cr = ReadBytes(r, w*h)
+		cg = ReadBytes(r, w*h)
+		cb = ReadBytes(r, w*h)
+	}
+
+	// Handle chroma subsampling (not implemented)
+	if cs {
+		// Chroma subsampling is not supported in this implementation
+		core.ThrowError("RemoteFX chroma subsampling is not supported")
+	}
+
+	// Handle color loss (not implemented)
+	if cll != 0 {
+		// Color loss is not supported in this implementation
+		core.ThrowError("RemoteFX color loss is not supported")
+	}
 
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
-
 	pos := 0
 	for y := 1; y <= h; y++ {
 		for x := 0; x < w; x++ {
-			img.Set(x, h-y, color.RGBA{R: cr[pos], G: cg[pos], B: cb[pos], A: 255})
+			var a uint8 = 255
+			if na && len(alpha) > pos {
+				a = alpha[pos]
+			}
+			img.Set(x, h-y, color.RGBA{R: cr[pos], G: cg[pos], B: cb[pos], A: a})
 			pos++
 		}
 	}

@@ -2,8 +2,9 @@ package nla
 
 import (
 	"bytes"
-	"github.com/GoFeGroup/gordp/core"
 	"io"
+
+	"github.com/GoFeGroup/gordp/core"
 )
 
 const (
@@ -80,4 +81,35 @@ func (avPairs AVPairs) GetTimeStamp() []byte {
 		}
 	}
 	return nil
+}
+
+// GetChannelBindings returns the channel binding token from AVPairs
+func (avPairs AVPairs) GetChannelBindings() []byte {
+	for _, v := range avPairs {
+		switch v.Must.Id {
+		case MsvChannelBindings:
+			return v.Optional.Value
+		case MsvAvEOL:
+			return nil
+		}
+	}
+	return nil
+}
+
+// CreateChannelBindingAVPair creates a channel binding AVPair
+func CreateChannelBindingAVPair(channelBindingToken []byte) AVPair {
+	return AVPair{
+		Must: struct {
+			Id  uint16
+			Len uint16
+		}{
+			Id:  MsvChannelBindings,
+			Len: uint16(len(channelBindingToken)),
+		},
+		Optional: struct {
+			Value []byte
+		}{
+			Value: channelBindingToken,
+		},
+	}
 }

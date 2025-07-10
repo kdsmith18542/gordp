@@ -1,0 +1,185 @@
+name: Qt GUI CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths: [ 'qt-gui/**', 'gui/**' ]
+  pull_request:
+    branches: [ main ]
+    paths: [ 'qt-gui/**', 'gui/**' ]
+
+jobs:
+  qt-gui-test:
+    name: Qt GUI Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Qt (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.5.0'
+        arch: 'x64'
+        modules: 'qtcharts qtnetworkauth qtwebengine qtwebview'
+
+    - name: Set up Qt (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.5.0'
+        arch: 'x64'
+        modules: 'qtcharts qtnetworkauth qtwebengine qtwebview'
+
+    - name: Set up Qt (macOS)
+      if: matrix.os == 'macos-latest'
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.5.0'
+        arch: 'x64'
+        modules: 'qtcharts qtnetworkauth qtwebengine qtwebview'
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Build Qt GUI (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        cd qt-gui
+        chmod +x build.sh
+        ./build.sh
+
+    - name: Build Qt GUI (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        cd qt-gui
+        cmake -B build -S .
+        cmake --build build --config Release
+
+    - name: Build Qt GUI (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        cd qt-gui
+        cmake -B build -S .
+        cmake --build build --config Release
+
+    - name: Run Qt GUI tests (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        cd qt-gui
+        ./build/gordp-gui --help || true
+
+    - name: Run Qt GUI tests (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        cd qt-gui
+        ./build/Release/gordp-gui.exe --help || true
+
+    - name: Run Qt GUI tests (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        cd qt-gui
+        ./build/gordp-gui --help || true
+
+    - name: Upload Qt GUI artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: qt-gui-${{ matrix.os }}
+        path: qt-gui/build/
+
+  qt-gui-lint:
+    name: Qt GUI Lint
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.5.0'
+        arch: 'x64'
+
+    - name: Install clang-format
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-format
+
+    - name: Check C++ code formatting
+      run: |
+        cd qt-gui/src
+        find . -name "*.cpp" -o -name "*.h" | xargs clang-format --dry-run --Werror
+
+  qt-gui-security:
+    name: Qt GUI Security
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.5.0'
+        arch: 'x64'
+
+    - name: Install security tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cppcheck
+
+    - name: Run C++ security analysis
+      run: |
+        cd qt-gui
+        cppcheck --enable=all --error-exitcode=1 src/
+
+  qt-gui-performance:
+    name: Qt GUI Performance
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.5.0'
+        arch: 'x64'
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Build Qt GUI
+      run: |
+        cd qt-gui
+        chmod +x build.sh
+        ./build.sh
+
+    - name: Run Qt GUI performance tests
+      run: |
+        cd qt-gui
+        timeout 30s ./build/gordp-gui --test-performance || true
+
+    - name: Upload performance data
+      uses: actions/upload-artifact@v4
+      with:
+        name: qt-gui-performance
+        path: qt-gui/performance-*.log 

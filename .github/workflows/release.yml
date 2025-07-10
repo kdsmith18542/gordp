@@ -76,8 +76,113 @@ jobs:
             ${{ matrix.binary_name }}
             ${{ matrix.binary_name }}.sha256
 
+  qt-gui-build:
+    name: Qt GUI Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            qt_arch: x64
+            binary_name: gordp-gui-linux-amd64
+          - os: windows-latest
+            qt_arch: x64
+            binary_name: gordp-gui-windows-amd64.exe
+          - os: macos-latest
+            qt_arch: x64
+            binary_name: gordp-gui-macos-amd64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.5.0'
+          arch: ${{ matrix.qt_arch }}
+          modules: 'qtcharts qtnetworkauth qtwebengine qtwebview'
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Build Qt GUI (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cd qt-gui
+          chmod +x build.sh
+          ./build.sh
+          cp build/gordp-gui ${{ matrix.binary_name }}
+
+      - name: Build Qt GUI (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          cd qt-gui
+          cmake -B build -S .
+          cmake --build build --config Release
+          cp build/Release/gordp-gui.exe ${{ matrix.binary_name }}
+
+      - name: Build Qt GUI (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          cd qt-gui
+          cmake -B build -S .
+          cmake --build build --config Release
+          cp build/gordp-gui ${{ matrix.binary_name }}
+
+      - name: Create checksum
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            certUtil -hashfile ${{ matrix.binary_name }} SHA256 > ${{ matrix.binary_name }}.sha256
+          else
+            sha256sum ${{ matrix.binary_name }} > ${{ matrix.binary_name }}.sha256
+          fi
+
+      - name: Upload Qt GUI artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.binary_name }}
+          path: |
+            ${{ matrix.binary_name }}
+            ${{ matrix.binary_name }}.sha256
+
+  mobile-build:
+    name: Mobile Client Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Build mobile client
+        run: |
+          cd mobile
+          go build -ldflags "-X main.Version=${{ github.ref_name }}" -o gordp-mobile-client .
+          sha256sum gordp-mobile-client > gordp-mobile-client.sha256
+
+      - name: Upload mobile client artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gordp-mobile-client
+          path: |
+            mobile/gordp-mobile-client
+            mobile/gordp-mobile-client.sha256
+
   release:
-    needs: build
+    needs: [build, qt-gui-build, mobile-build]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     
@@ -101,7 +206,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   docker:
-    needs: build
+    needs: [build, qt-gui-build]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     
@@ -124,6 +229,12 @@ jobs:
           name: gordp-linux-amd64
           path: dist/
 
+      - name: Download Qt GUI binary
+        uses: actions/download-artifact@v4
+        with:
+          name: gordp-gui-linux-amd64
+          path: dist/
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -133,6 +244,8 @@ jobs:
           tags: |
             kdsmith18542/gordp:latest
             kdsmith18542/gordp:${{ github.ref_name }}
+            kdsmith18542/gordp:gui
+            kdsmith18542/gordp:gui-${{ github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -160,13 +273,18 @@ jobs:
             VERSION=${{ github.event.inputs.version }}
           fi
           
-          # Download and calculate SHA256
+          # Download and calculate SHA256 for main binary
           curl -L "https://github.com/kdsmith18542/gordp/releases/download/${VERSION}/gordp-darwin-amd64" -o gordp-darwin-amd64
           SHA256=$(shasum -a 256 gordp-darwin-amd64 | cut -d' ' -f1)
+          
+          # Download and calculate SHA256 for Qt GUI
+          curl -L "https://github.com/kdsmith18542/gordp/releases/download/${VERSION}/gordp-gui-macos-amd64" -o gordp-gui-macos-amd64
+          GUI_SHA256=$(shasum -a 256 gordp-gui-macos-amd64 | cut -d' ' -f1)
           
           # Update formula
           sed -i "s/version \"[^\"]*\"/version \"${VERSION#v}\"/" Formula/gordp.rb
           sed -i "s/sha256 \"[^\"]*\"/sha256 \"${SHA256}\"/" Formula/gordp.rb
+          sed -i "s/gui_sha256 \"[^\"]*\"/gui_sha256 \"${GUI_SHA256}\"/" Formula/gordp.rb
           
           # Commit and push
           git config user.name "GitHub Actions"
@@ -199,17 +317,97 @@ jobs:
             VERSION=${{ github.event.inputs.version }}
           fi
           
-          # Download and calculate SHA256
+          # Download and calculate SHA256 for main binary
           curl -L "https://github.com/kdsmith18542/gordp/releases/download/${VERSION}/gordp-windows-amd64.exe" -o gordp-windows-amd64.exe
           SHA256=$(sha256sum gordp-windows-amd64.exe | cut -d' ' -f1)
+          
+          # Download and calculate SHA256 for Qt GUI
+          curl -L "https://github.com/kdsmith18542/gordp/releases/download/${VERSION}/gordp-gui-windows-amd64.exe" -o gordp-gui-windows-amd64.exe
+          GUI_SHA256=$(sha256sum gordp-gui-windows-amd64.exe | cut -d' ' -f1)
           
           # Update nuspec
           sed -i "s/<version>[^<]*<\/version>/<version>${VERSION#v}<\/version>/" gordp.nuspec
           sed -i "s/checksum=\"[^\"]*\"/checksum=\"${SHA256}\"/" tools/chocolateyinstall.ps1
+          sed -i "s/gui_checksum=\"[^\"]*\"/gui_checksum=\"${GUI_SHA256}\"/" tools/chocolateyinstall.ps1
           
           # Commit and push
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add .
           git commit -m "Update gordp to ${VERSION}"
-          git push 
+          git push
+
+  snapcraft:
+    needs: release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Snapcraft
+        uses: samuelmeuli/action-snapcraft@v1
+        with:
+          snapcraft_token: ${{ secrets.SNAPCRAFT_TOKEN }}
+
+      - name: Build and publish snap
+        run: |
+          # Create snapcraft.yaml if it doesn't exist
+          if [ ! -f snapcraft.yaml ]; then
+            cat > snapcraft.yaml << EOF
+          name: gordp
+          version: '${{ github.ref_name }}'
+          summary: Production-grade RDP client
+          description: |
+            GoRDP is a comprehensive, production-grade implementation of the Remote Desktop Protocol (RDP) client in Go.
+            Features include Qt GUI, mobile support, advanced security, and enterprise features.
+          grade: stable
+          confinement: strict
+          base: core22
+          
+          apps:
+            gordp:
+              command: gordp
+              plugs: [network, network-bind]
+            gordp-gui:
+              command: gordp-gui
+              plugs: [network, network-bind, desktop, opengl]
+          
+          parts:
+            gordp:
+              plugin: go
+              source: .
+              go-importpath: github.com/kdsmith18542/gordp
+              build-packages: [gcc, libc6-dev]
+            gordp-gui:
+              plugin: cmake
+              source: qt-gui
+              build-packages: [cmake, qt6-base-dev, qt6-charts-dev]
+          EOF
+          fi
+          
+          snapcraft build
+          snapcraft upload gordp_*.snap --release stable
+
+  flatpak:
+    needs: release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: gordp.flatpak
+          cache-key: flatpak-builder-${{ github.sha }}
+          run: org.gordp.Gordp.yml
+
+      - name: Upload Flatpak bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: gordp-flatpak
+          path: gordp.flatpak 

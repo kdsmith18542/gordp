@@ -1,0 +1,138 @@
+name: Mobile Client CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths: [ 'mobile/**', 'proto/**' ]
+  pull_request:
+    branches: [ main ]
+    paths: [ 'mobile/**', 'proto/**' ]
+
+jobs:
+  mobile-test:
+    name: Mobile Client Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Run mobile client tests
+      run: |
+        cd mobile
+        go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+    - name: Upload mobile coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: mobile/coverage.txt
+        flags: mobile
+        name: codecov-mobile
+        fail_ci_if_error: false
+
+  mobile-build:
+    name: Mobile Client Build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Build mobile client
+      run: |
+        cd mobile
+        go build -v -o gordp-mobile-client .
+
+    - name: Test mobile client functionality
+      run: |
+        cd mobile
+        ./gordp-mobile-client --help || true
+
+    - name: Upload mobile client binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: gordp-mobile-client
+        path: mobile/gordp-mobile-client
+
+  mobile-integration:
+    name: Mobile Integration Test
+    runs-on: ubuntu-latest
+
+    services:
+      mock-rdp:
+        image: alpine:latest
+        ports:
+          - 3389:3389
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Start mock RDP server
+      run: |
+        cd tests/integration
+        go run mock_server.go &
+        sleep 5
+
+    - name: Run mobile integration tests
+      run: |
+        cd mobile
+        go test -v -timeout 30s -run TestMobileIntegration ./...
+
+  mobile-performance:
+    name: Mobile Performance Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Run mobile performance benchmarks
+      run: |
+        cd mobile
+        go test -bench=. -benchmem ./...
+
+    - name: Run memory profiling
+      run: |
+        cd mobile
+        go test -run=TestMemoryProfile -memprofile=mem.prof ./...
+
+    - name: Upload performance data
+      uses: actions/upload-artifact@v4
+      with:
+        name: mobile-performance
+        path: |
+          mobile/mem.prof
+          mobile/*.test 

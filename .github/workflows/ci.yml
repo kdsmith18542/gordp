@@ -9,6 +9,7 @@ on:
 env:
   GO_VERSION: '1.21'
   GOLANGCI_LINT_VERSION: 'v1.54.2'
+  QT_VERSION: '6.5.0'
 
 jobs:
   test:
@@ -32,6 +33,11 @@ jobs:
 
     - name: Run tests
       run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+    - name: Run integration tests
+      run: |
+        cd tests/integration
+        ./run_tests.sh
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -82,11 +88,113 @@ jobs:
     - name: Install dependencies
       run: go mod download
 
-    - name: Build
+    - name: Build core client
       run: go build -v ./...
 
     - name: Build examples
       run: go build -v ./examples/...
+
+    - name: Build mobile client
+      run: go build -v ./mobile/...
+
+    - name: Build management console
+      run: go build -v ./management/...
+
+  qt-gui-build:
+    name: Qt GUI Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Qt (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: ${{ env.QT_VERSION }}
+        arch: 'x64'
+        modules: 'qtcharts qtnetworkauth qtwebengine qtwebview'
+
+    - name: Set up Qt (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: ${{ env.QT_VERSION }}
+        arch: 'x64'
+        modules: 'qtcharts qtnetworkauth qtwebengine qtwebview'
+
+    - name: Set up Qt (macOS)
+      if: matrix.os == 'macos-latest'
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: ${{ env.QT_VERSION }}
+        arch: 'x64'
+        modules: 'qtcharts qtnetworkauth qtwebengine qtwebview'
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Build Qt GUI (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        cd qt-gui
+        chmod +x build.sh
+        ./build.sh
+
+    - name: Build Qt GUI (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        cd qt-gui
+        cmake -B build -S .
+        cmake --build build --config Release
+
+    - name: Build Qt GUI (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        cd qt-gui
+        cmake -B build -S .
+        cmake --build build --config Release
+
+    - name: Upload Qt GUI artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: qt-gui-${{ matrix.os }}
+        path: qt-gui/build/
+
+  mobile-test:
+    name: Mobile Client Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Run mobile client tests
+      run: |
+        cd mobile
+        go test -v ./...
+
+    - name: Test mobile client build
+      run: |
+        cd mobile
+        go build -v -o mobile_client_test .
 
   benchmark:
     name: Benchmark
@@ -106,6 +214,11 @@ jobs:
 
     - name: Run benchmarks
       run: go test -bench=. -benchmem ./...
+
+    - name: Run performance tests
+      run: |
+        cd proto/performance
+        go test -bench=. -benchmem ./...
 
   security:
     name: Security Scan
@@ -127,13 +240,62 @@ jobs:
       run: go vet ./...
 
     - name: Run staticcheck
-      run: go install honnef.co/go/tools/cmd/staticcheck@latest
-      run: staticcheck ./...
+      run: |
+        go install honnef.co/go/tools/cmd/staticcheck@latest
+        staticcheck ./...
+
+    - name: Run gosec security scanner
+      run: |
+        go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+        gosec ./...
+
+    - name: Check for known vulnerabilities
+      run: |
+        go install golang.org/x/vuln/cmd/govulncheck@latest
+        govulncheck ./...
+
+  integration-test:
+    name: Integration Test
+    runs-on: ubuntu-latest
+
+    services:
+      # Mock RDP server for integration testing
+      mock-rdp:
+        image: alpine:latest
+        ports:
+          - 3389:3389
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Start mock RDP server
+      run: |
+        cd tests/integration
+        go run mock_server.go &
+        sleep 5
+
+    - name: Run integration tests
+      run: |
+        cd tests/integration
+        go test -v -timeout 30s ./...
+
+    - name: Test RDP protocol compliance
+      run: |
+        go test -v -run TestRDPProtocol ./proto/...
 
   release:
     name: Release
     runs-on: ubuntu-latest
-    needs: [test, lint, build, benchmark, security]
+    needs: [test, lint, build, qt-gui-build, mobile-test, benchmark, security, integration-test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
@@ -159,17 +321,20 @@ jobs:
 
     - name: Build examples
       run: |
-        go build -o build/interactive_client examples/interactive_client.go
+        go build -o build/interactive_client examples/interactive_example/interactive_client.go
+        go build -o build/comprehensive_client examples/comprehensive_client.go
+        go build -o build/config_client examples/config_client
+        go build -o build/management_console management/console.go
 
     - name: Create release archive
       run: |
         mkdir -p release
         cp build/* release/
-        cp README.md LICENSE plan.md release/
+        cp README.md LICENSE Future.md stubs.md release/
         tar -czf gordp-release.tar.gz release/
 
     - name: Upload release artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: gordp-release
         path: |
@@ -179,17 +344,17 @@ jobs:
   docker:
     name: Docker Build
     runs-on: ubuntu-latest
-    needs: [test, lint, build]
+    needs: [test, lint, build, qt-gui-build]
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v3
 
     - name: Build and push Docker image
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v5
       with:
         context: .
         push: false
@@ -219,8 +384,49 @@ jobs:
         mkdir -p docs
         go doc -all ./... > docs/api.md
 
+    - name: Generate dependency documentation
+      run: |
+        go mod graph > docs/dependencies.txt
+        go list -m all > docs/modules.txt
+
     - name: Upload documentation
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: documentation
-        path: docs/ 
+        path: docs/
+
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Run code complexity analysis
+      run: |
+        go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
+        gocyclo -over 15 . || true
+
+    - name: Check for dead code
+      run: |
+        go install github.com/tsenart/deadcode@latest
+        deadcode ./... || true
+
+    - name: Check for unused dependencies
+      run: |
+        go install github.com/dominikbraun/graph@latest
+        go mod tidy
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "Unused dependencies found"
+          git diff
+          exit 1
+        fi 

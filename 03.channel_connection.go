@@ -1,10 +1,10 @@
 package gordp
 
 import (
-	"github.com/GoFeGroup/gordp/core"
-	"github.com/GoFeGroup/gordp/glog"
-	"github.com/GoFeGroup/gordp/proto/mcs"
-	"github.com/GoFeGroup/gordp/proto/pdu/mcsPdu"
+	"github.com/kdsmith18542/gordp/core"
+	"github.com/kdsmith18542/gordp/glog"
+	"github.com/kdsmith18542/gordp/proto/mcs"
+	"github.com/kdsmith18542/gordp/proto/pdu/mcsPdu"
 )
 
 func (c *Client) joinChannel(userId, channelId uint16) {

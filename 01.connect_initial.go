@@ -1,10 +1,10 @@
 package gordp
 
 import (
-	"github.com/GoFeGroup/gordp/core"
-	"github.com/GoFeGroup/gordp/glog"
-	"github.com/GoFeGroup/gordp/proto/nla"
-	"github.com/GoFeGroup/gordp/proto/pdu/connPdu"
+	"github.com/kdsmith18542/gordp/core"
+	"github.com/kdsmith18542/gordp/glog"
+	"github.com/kdsmith18542/gordp/proto/nla"
+	"github.com/kdsmith18542/gordp/proto/pdu/connPdu"
 )
 
 func (c *Client) switchNLA() {

@@ -6,8 +6,8 @@ import (
 	"io"
 	"sync"
 
-	"github.com/GoFeGroup/gordp/core"
-	"github.com/GoFeGroup/gordp/glog"
+	"github.com/kdsmith18542/gordp/core"
+	"github.com/kdsmith18542/gordp/glog"
 )
 
 // Offscreen Bitmap Support Level
@@ -255,8 +255,28 @@ type TsOffscreenBitmapOrder struct {
 	SourceTop  uint16
 }
 
+// Add TsOrderHeader implementation
+// https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpegdi/2c3c3c41-1d54-4254-bb62-bc082a3c1f10
+type TsOrderHeader struct {
+	ControlFlags uint8
+	OrderType    uint8
+}
+
+func (h *TsOrderHeader) Read(r io.Reader) {
+	var headerByte uint8
+	core.ReadLE(r, &headerByte)
+	h.ControlFlags = headerByte >> 4
+	h.OrderType = headerByte & 0x0F
+}
+
+func (h *TsOrderHeader) Write(w io.Writer) {
+	headerByte := (h.ControlFlags << 4) | (h.OrderType & 0x0F)
+	core.WriteLE(w, headerByte)
+}
+
+// Update TsOffscreenBitmapOrder to use header parsing
 func (o *TsOffscreenBitmapOrder) Read(r io.Reader) {
-	// o.Header.Read(r) // Placeholder: implement real header parsing if needed
+	o.Header.Read(r)
 	core.ReadLE(r, &o.CacheId)
 	core.ReadLE(r, &o.CacheIndex)
 	core.ReadLE(r, &o.DestLeft)
@@ -266,12 +286,12 @@ func (o *TsOffscreenBitmapOrder) Read(r io.Reader) {
 	core.ReadLE(r, &o.SourceLeft)
 	core.ReadLE(r, &o.SourceTop)
 
-	glog.Debugf("Offscreen bitmap order: cache=%d, index=%d, dest=[%d,%d,%d,%d], source=[%d,%d]",
-		o.CacheId, o.CacheIndex, o.DestLeft, o.DestTop, o.DestRight, o.DestBottom, o.SourceLeft, o.SourceTop)
+	glog.Debugf("Offscreen bitmap order: header=[flags=%d type=%d], cache=%d, index=%d, dest=[%d,%d,%d,%d], source=[%d,%d]",
+		o.Header.ControlFlags, o.Header.OrderType, o.CacheId, o.CacheIndex, o.DestLeft, o.DestTop, o.DestRight, o.DestBottom, o.SourceLeft, o.SourceTop)
 }
 
 func (o *TsOffscreenBitmapOrder) Write(w io.Writer) {
-	// o.Header.Write(w) // Placeholder: implement real header writing if needed
+	o.Header.Write(w)
 	core.WriteLE(w, o.CacheId)
 	core.WriteLE(w, o.CacheIndex)
 	core.WriteLE(w, o.DestLeft)
@@ -289,16 +309,17 @@ type TsOffscreenBitmapDeleteOrder struct {
 	CacheIndex uint16
 }
 
+// Update TsOffscreenBitmapDeleteOrder to use header parsing
 func (o *TsOffscreenBitmapDeleteOrder) Read(r io.Reader) {
-	// o.Header.Read(r) // Placeholder: implement real header parsing if needed
+	o.Header.Read(r)
 	core.ReadLE(r, &o.CacheId)
 	core.ReadLE(r, &o.CacheIndex)
 
-	glog.Debugf("Offscreen bitmap delete order: cache=%d, index=%d", o.CacheId, o.CacheIndex)
+	glog.Debugf("Offscreen bitmap delete order: header=[flags=%d type=%d], cache=%d, index=%d", o.Header.ControlFlags, o.Header.OrderType, o.CacheId, o.CacheIndex)
 }
 
 func (o *TsOffscreenBitmapDeleteOrder) Write(w io.Writer) {
-	// o.Header.Write(w) // Placeholder: implement real header writing if needed
+	o.Header.Write(w)
 	core.WriteLE(w, o.CacheId)
 	core.WriteLE(w, o.CacheIndex)
 }
@@ -330,6 +351,3 @@ func NewOffscreenBitmapCacheSupport() *OffscreenBitmapCacheSupport {
 		CacheEntries: 100,  // 100 entries default
 	}
 }
-
-// Add TsOrderHeader placeholder
-type TsOrderHeader struct{}

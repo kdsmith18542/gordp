@@ -9,7 +9,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/GoFeGroup/gordp/glog"
+	"github.com/kdsmith18542/gordp/glog"
 	"github.com/huin/asn1ber"
 )
 

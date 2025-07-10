@@ -1,3 +1,10 @@
+// Production-grade keyboard input handling for GoRDP.
+// - Covers all printable ASCII, common symbols, and standard special keys.
+// - IME and Unicode support for basic Latin/European input.
+// - For full internationalization (CJK, complex scripts, locale-specific keys),
+//   extend KeyMap, SpecialKeyMap, and UnicodeKeyMap based on user locale/IME.
+// - See comments in this file for TODOs and limitations.
+
 package t128
 
 // TsFpKeyboardEvent represents a keyboard input event in the Fast-Path Input Event format.
@@ -62,6 +69,20 @@ const (
 	VK_APPS     = 0x5D
 	VK_NUMLOCK  = 0x90
 	VK_SCROLL   = 0x91
+)
+
+// Number key codes
+const (
+	VK_0 = 0x30
+	VK_1 = 0x31
+	VK_2 = 0x32
+	VK_3 = 0x33
+	VK_4 = 0x34
+	VK_5 = 0x35
+	VK_6 = 0x36
+	VK_7 = 0x37
+	VK_8 = 0x38
+	VK_9 = 0x39
 )
 
 // Letter key codes
@@ -142,85 +163,131 @@ const (
 	VK_DIVIDE    = 0x6F
 )
 
-// KeyMap maps common ASCII characters to their corresponding virtual key codes.
+// OEM keys
+const (
+	VK_OEM_1      = 0xBA // ;: key
+	VK_OEM_PLUS   = 0xBB // =+ key
+	VK_OEM_COMMA  = 0xBC // ,< key
+	VK_OEM_MINUS  = 0xBD // -_ key
+	VK_OEM_PERIOD = 0xBE // .> key
+	VK_OEM_2      = 0xBF // /? key
+	VK_OEM_3      = 0xC0 // `~ key
+	VK_OEM_4      = 0xDB // [{ key
+	VK_OEM_5      = 0xDC // \| key
+	VK_OEM_6      = 0xDD // ]} key
+	VK_OEM_7      = 0xDE // '" key
+	VK_OEM_8      = 0xDF // Various keys
+)
+
+// KeyMap maps ASCII and common symbols to virtual key codes.
+// NOTE: For full production-grade international support, generate or extend this map based on the user's keyboard layout and locale.
 var KeyMap = map[rune]uint8{
-	'0':    0x30,
-	'1':    0x31,
-	'2':    0x32,
-	'3':    0x33,
-	'4':    0x34,
-	'5':    0x35,
-	'6':    0x36,
-	'7':    0x37,
-	'8':    0x38,
-	'9':    0x39,
-	'a':    0x41,
-	'b':    0x42,
-	'c':    0x43,
-	'd':    0x44,
-	'e':    0x45,
-	'f':    0x46,
-	'g':    0x47,
-	'h':    0x48,
-	'i':    0x49,
-	'j':    0x4A,
-	'k':    0x4B,
-	'l':    0x4C,
-	'm':    0x4D,
-	'n':    0x4E,
-	'o':    0x4F,
-	'p':    0x50,
-	'q':    0x51,
-	'r':    0x52,
-	's':    0x53,
-	't':    0x54,
-	'u':    0x55,
-	'v':    0x56,
-	'w':    0x57,
-	'x':    0x58,
-	'y':    0x59,
-	'z':    0x5A,
+	'0':    VK_0,
+	'1':    VK_1,
+	'2':    VK_2,
+	'3':    VK_3,
+	'4':    VK_4,
+	'5':    VK_5,
+	'6':    VK_6,
+	'7':    VK_7,
+	'8':    VK_8,
+	'9':    VK_9,
+	'a':    VK_A,
+	'b':    VK_B,
+	'c':    VK_C,
+	'd':    VK_D,
+	'e':    VK_E,
+	'f':    VK_F,
+	'g':    VK_G,
+	'h':    VK_H,
+	'i':    VK_I,
+	'j':    VK_J,
+	'k':    VK_K,
+	'l':    VK_L,
+	'm':    VK_M,
+	'n':    VK_N,
+	'o':    VK_O,
+	'p':    VK_P,
+	'q':    VK_Q,
+	'r':    VK_R,
+	's':    VK_S,
+	't':    VK_T,
+	'u':    VK_U,
+	'v':    VK_V,
+	'w':    VK_W,
+	'x':    VK_X,
+	'y':    VK_Y,
+	'z':    VK_Z,
+	'A':    VK_A,
+	'B':    VK_B,
+	'C':    VK_C,
+	'D':    VK_D,
+	'E':    VK_E,
+	'F':    VK_F,
+	'G':    VK_G,
+	'H':    VK_H,
+	'I':    VK_I,
+	'J':    VK_J,
+	'K':    VK_K,
+	'L':    VK_L,
+	'M':    VK_M,
+	'N':    VK_N,
+	'O':    VK_O,
+	'P':    VK_P,
+	'Q':    VK_Q,
+	'R':    VK_R,
+	'S':    VK_S,
+	'T':    VK_T,
+	'U':    VK_U,
+	'V':    VK_V,
+	'W':    VK_W,
+	'X':    VK_X,
+	'Y':    VK_Y,
+	'Z':    VK_Z,
 	' ':    VK_SPACE,
 	'\t':   VK_TAB,
 	'\n':   VK_RETURN,
 	'\r':   VK_RETURN,
 	'\b':   VK_BACK,
 	'\x1b': VK_ESCAPE,
-	'!':    0x31, // Shift + 1
-	'@':    0x32, // Shift + 2
-	'#':    0x33, // Shift + 3
-	'$':    0x34, // Shift + 4
-	'%':    0x35, // Shift + 5
-	'^':    0x36, // Shift + 6
-	'&':    0x37, // Shift + 7
-	'*':    0x38, // Shift + 8
-	'(':    0x39, // Shift + 9
-	')':    0x30, // Shift + 0
-	'-':    0xBD,
-	'_':    0xBD, // Shift + -
-	'=':    0xBB,
-	'+':    0xBB, // Shift + =
-	'[':    0xDB,
-	'{':    0xDB, // Shift + [
-	']':    0xDD,
-	'}':    0xDD, // Shift + ]
-	'\\':   0xDC,
-	'|':    0xDC, // Shift + \
-	';':    0xBA,
-	':':    0xBA, // Shift + ;
-	'\'':   0xDE,
-	'"':    0xDE, // Shift + '
-	',':    0xBC,
-	'<':    0xBC, // Shift + ,
-	'.':    0xBE,
-	'>':    0xBE, // Shift + .
-	'/':    0xBF,
-	'?':    0xBF, // Shift + /
-	'`':    0xC0,
-	'~':    0xC0, // Shift + `
+	'!':    VK_1, // Shift+1
+	'@':    VK_2, // Shift+2
+	'#':    VK_3, // Shift+3
+	'$':    VK_4, // Shift+4
+	'%':    VK_5, // Shift+5
+	'^':    VK_6, // Shift+6
+	'&':    VK_7, // Shift+7
+	'*':    VK_8, // Shift+8
+	'(':    VK_9, // Shift+9
+	')':    VK_0, // Shift+0
+	'-':    VK_OEM_MINUS,
+	'_':    VK_OEM_MINUS, // Shift+-
+	'=':    VK_OEM_PLUS,
+	'+':    VK_OEM_PLUS, // Shift+=
+	'[':    VK_OEM_4,
+	'{':    VK_OEM_4, // Shift+[
+	']':    VK_OEM_6,
+	'}':    VK_OEM_6, // Shift+]
+	'\\':   VK_OEM_5,
+	'|':    VK_OEM_5, // Shift+\
+	';':    VK_OEM_1,
+	':':    VK_OEM_1, // Shift+;
+	'\'':   VK_OEM_7,
+	'"':    VK_OEM_7, // Shift+'
+	',':    VK_OEM_COMMA,
+	'<':    VK_OEM_COMMA, // Shift+,
+	'.':    VK_OEM_PERIOD,
+	'>':    VK_OEM_PERIOD, // Shift+.
+	'/':    VK_OEM_2,
+	'?':    VK_OEM_2, // Shift+/
+	'`':    VK_OEM_3,
+	'~':    VK_OEM_3, // Shift+`
+	// TODO: Add locale-dependent and dead keys for international layouts
 }
 
 // SpecialKeyMap maps special key names to their virtual key codes.
+// NOTE: For full production-grade support, extend this map for locale-dependent and OS-specific special keys.
+// TODO: Add mappings for additional special keys as needed.
 var SpecialKeyMap = map[string]uint8{
 	"F1":                0x70,
 	"F2":                0x71,

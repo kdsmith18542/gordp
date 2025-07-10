@@ -2,13 +2,11 @@ package ber
 
 import (
 	"fmt"
-	"github.com/GoFeGroup/gordp/core"
-	"github.com/GoFeGroup/gordp/glog"
 	"io"
-)
 
-// FIXME: Copy from Freerdp C.mcs_write_connect_initial
-func fixme() {}
+	"github.com/kdsmith18542/gordp/core"
+	"github.com/kdsmith18542/gordp/glog"
+)
 
 // Class - bits 8 and 7
 const (

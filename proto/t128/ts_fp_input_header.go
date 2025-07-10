@@ -3,7 +3,7 @@ package t128
 import (
 	"io"
 
-	"github.com/GoFeGroup/gordp/core"
+	"github.com/kdsmith18542/gordp/core"
 )
 
 // action
@@ -24,6 +24,16 @@ type FpInputHeader struct {
 	Action    uint8
 	NumEvents uint8
 	Flags     uint8
+}
+
+func (h *FpInputHeader) Read(r io.Reader) {
+	var inputHeader uint8
+	core.ReadLE(r, &inputHeader)
+
+	// Extract fields from the packed header
+	h.Action = (inputHeader >> 6) & 0x03
+	h.NumEvents = (inputHeader >> 2) & 0x0F
+	h.Flags = inputHeader & 0x03
 }
 
 func (h *FpInputHeader) Write(w io.Writer) {

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/GoFeGroup/gordp/core"
+	"github.com/kdsmith18542/gordp/core"
 	"github.com/stretchr/testify/assert"
 )
 

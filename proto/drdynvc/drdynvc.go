@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/GoFeGroup/gordp/core"
-	"github.com/GoFeGroup/gordp/glog"
+	"github.com/kdsmith18542/gordp/core"
+	"github.com/kdsmith18542/gordp/glog"
 )
 
 // Dynamic Virtual Channel Message Types
@@ -87,8 +87,8 @@ type DataMessage struct {
 
 // DynamicVirtualChannelManager manages dynamic virtual channels
 type DynamicVirtualChannelManager struct {
-	channels      map[uint32]*DynamicVirtualChannel
-	requests      map[uint32]chan interface{} // Request ID to response channel
+	Channels      map[uint32]*DynamicVirtualChannel // Exported for enumeration
+	requests      map[uint32]chan interface{}       // Request ID to response channel
 	nextRequestId uint32
 }
 
@@ -143,7 +143,7 @@ func (h *DefaultDynamicVirtualChannelHandler) OnDataReceived(channelId uint32, d
 // NewDynamicVirtualChannelManager creates a new dynamic virtual channel manager
 func NewDynamicVirtualChannelManager() *DynamicVirtualChannelManager {
 	return &DynamicVirtualChannelManager{
-		channels:      make(map[uint32]*DynamicVirtualChannel),
+		Channels:      make(map[uint32]*DynamicVirtualChannel),
 		requests:      make(map[uint32]chan interface{}),
 		nextRequestId: 1,
 	}
@@ -174,13 +174,13 @@ func (m *DynamicVirtualChannelManager) RegisterChannelWithID(channelId uint32, c
 		channel.Handler = NewDefaultDynamicVirtualChannelHandler()
 	}
 
-	m.channels[channelId] = channel
+	m.Channels[channelId] = channel
 	return nil
 }
 
 // GetChannel retrieves a dynamic virtual channel by ID
 func (m *DynamicVirtualChannelManager) GetChannel(channelId uint32) (*DynamicVirtualChannel, bool) {
-	channel, exists := m.channels[channelId]
+	channel, exists := m.Channels[channelId]
 	return channel, exists
 }
 

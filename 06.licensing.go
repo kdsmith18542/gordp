@@ -1,6 +1,6 @@
 package gordp
 
-import "github.com/GoFeGroup/gordp/proto/pdu/licPdu"
+import "github.com/kdsmith18542/gordp/proto/pdu/licPdu"
 
 func (c *Client) readLicensing() {
 	licensing := licPdu.ServerLicensingPDU{}

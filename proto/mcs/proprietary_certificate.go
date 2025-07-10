@@ -1,10 +1,14 @@
 package mcs
 
 import (
+	"crypto"
+	"crypto/rsa"
+	"crypto/sha1"
 	"io"
+	"math/big"
 
-	"github.com/GoFeGroup/gordp/core"
-	"github.com/GoFeGroup/gordp/glog"
+	"github.com/kdsmith18542/gordp/core"
+	"github.com/kdsmith18542/gordp/glog"
 )
 
 // RSAPublicKey
@@ -37,7 +41,21 @@ func (p *ProprietaryServerCertificate) GetPublicKey() (uint32, []byte) {
 	return p.PublicKeyBlob.PubExp, p.PublicKeyBlob.Modulus
 }
 func (p *ProprietaryServerCertificate) Verify() bool {
-	return true // TODO:
+	// Construct RSA public key
+	pubKey := &rsa.PublicKey{
+		N: new(big.Int).SetBytes(p.PublicKeyBlob.Modulus),
+		E: int(p.PublicKeyBlob.PubExp),
+	}
+	// Hash the public key blob (excluding the signature)
+	hash := sha1.New()
+	hash.Write(p.PublicKeyBlob.Modulus)
+	digest := hash.Sum(nil)
+	// Verify the signature
+	if err := rsa.VerifyPKCS1v15(pubKey, crypto.SHA1, digest, p.SignatureBlob); err != nil {
+		glog.Warnf("Proprietary certificate signature verification failed: %v", err)
+		return false
+	}
+	return true
 }
 
 func (p *ProprietaryServerCertificate) Read(r io.Reader) {

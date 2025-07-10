@@ -3,7 +3,7 @@ package nla
 import (
 	"bytes"
 
-	"github.com/GoFeGroup/gordp/core"
+	"github.com/kdsmith18542/gordp/core"
 )
 
 // NTLMv2ClientChallenge
@@ -56,6 +56,7 @@ func (c *NTLMv2ClientChallenge) Serialize() []byte {
 	buff := new(bytes.Buffer)
 	core.WriteLE(buff, c.Must)
 	c.Optional.AvPairs.Write(buff)
-	buff.Write([]byte{0x00, 0x00, 0x00, 0x00}) // FIXME: four bytes?
+	// NTLMv2 client challenge ends with 4 zero bytes as per specification
+	buff.Write([]byte{0x00, 0x00, 0x00, 0x00})
 	return buff.Bytes()
 }

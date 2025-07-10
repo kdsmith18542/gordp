@@ -1,8 +1,9 @@
 package licPdu
 
 import (
-	"github.com/GoFeGroup/gordp/core"
 	"io"
+
+	"github.com/kdsmith18542/gordp/core"
 )
 
 const (
@@ -50,12 +51,15 @@ func (d *LicenseValidClientData) Read(r io.Reader) {
 	d.Preamble.Read(r)
 	switch d.Preamble.BMsgType {
 	case NEW_LICENSE:
-		return // FIXME: OK?
+		// NEW_LICENSE message type indicates successful license acquisition
+		// No additional data to read for this message type
+		return
 	case ERROR_ALERT:
 		d.ErrorMessage.Read(r)
 		if d.ErrorMessage.DwErrorCode == STATUS_VALID_CLIENT &&
 			d.ErrorMessage.DwStateTransaction == ST_NO_TRANSITION {
-			return // FIXME: OK?
+			// Valid client with no state transition - this is a normal condition
+			return
 		}
 		fallthrough
 	case LICENSE_REQUEST:
@@ -65,6 +69,6 @@ func (d *LicenseValidClientData) Read(r io.Reader) {
 	case UPGRADE_LICENSE:
 		fallthrough
 	default:
-		core.Throw("not implement")
+		core.Throw("unsupported license message type")
 	}
 }

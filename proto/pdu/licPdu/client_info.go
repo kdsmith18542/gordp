@@ -2,11 +2,11 @@ package licPdu
 
 import (
 	"bytes"
-	"github.com/GoFeGroup/gordp/core"
-	"github.com/GoFeGroup/gordp/glog"
-	"github.com/GoFeGroup/gordp/proto/mcs"
-	"github.com/GoFeGroup/gordp/proto/sec"
-	"github.com/GoFeGroup/gordp/proto/x224"
+	"github.com/kdsmith18542/gordp/core"
+	"github.com/kdsmith18542/gordp/glog"
+	"github.com/kdsmith18542/gordp/proto/mcs"
+	"github.com/kdsmith18542/gordp/proto/sec"
+	"github.com/kdsmith18542/gordp/proto/x224"
 	"io"
 )
 

@@ -1,7 +1,7 @@
 package gordp
 
 import (
-	"github.com/GoFeGroup/gordp/proto/t128"
+	"github.com/kdsmith18542/gordp/proto/t128"
 )
 
 func (c *Client) capabilitiesExchange() {

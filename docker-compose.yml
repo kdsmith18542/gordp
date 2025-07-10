@@ -1,0 +1,288 @@
+version: '3.8'
+
+services:
+  # Basic GoRDP client
+  gordp-client:
+    image: kdsmith18542/gordp:latest
+    container_name: gordp-client
+    environment:
+      - RDP_HOST=192.168.1.100
+      - RDP_PORT=3389
+      - RDP_USERNAME=administrator
+      - RDP_PASSWORD=${RDP_PASSWORD}
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+    networks:
+      - gordp-network
+    restart: unless-stopped
+
+  # GoRDP GUI Client (Go-based)
+  gordp-gui:
+    image: kdsmith18542/gordp:latest
+    container_name: gordp-gui
+    command: ["gordp-gui"]
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+      - ./data:/app/data
+    networks:
+      - gordp-network
+    restart: unless-stopped
+
+  # GoRDP Qt GUI Client
+  gordp-qt-gui:
+    image: kdsmith18542/gordp:latest
+    container_name: gordp-qt-gui
+    command: ["gordp-qt-gui"]
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - QT_QPA_PLATFORM=xcb
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./plugins:/app/plugins:ro
+    networks:
+      - gordp-network
+    restart: unless-stopped
+
+  # GoRDP WebRTC Gateway
+  gordp-gateway:
+    image: kdsmith18542/gordp:latest
+    container_name: gordp-gateway
+    command: ["--gateway", "--port", "8080"]
+    ports:
+      - "8080:8080"
+      - "8081:8081"  # WebSocket port
+    environment:
+      - GATEWAY_HOST=0.0.0.0
+      - GATEWAY_PORT=8080
+      - WEBRTC_ICE_SERVERS=stun:stun.l.google.com:19302
+      - ENABLE_AUDIO=true
+      - ENABLE_CLIPBOARD=true
+      - ENABLE_DEVICE_REDIRECTION=true
+    volumes:
+      - ./gateway:/app/gateway
+      - ./logs:/app/logs
+      - ./certificates:/app/certificates:ro
+    networks:
+      - gordp-network
+    restart: unless-stopped
+
+  # GoRDP Management Console
+  gordp-management:
+    image: kdsmith18542/gordp:latest
+    container_name: gordp-management
+    command: ["--management", "--port", "9090"]
+    ports:
+      - "9090:9090"
+    environment:
+      - MANAGEMENT_HOST=0.0.0.0
+      - MANAGEMENT_PORT=9090
+      - DB_PATH=/app/data/gordp.db
+      - LOG_LEVEL=info
+      - ENABLE_AUDIT=true
+      - ENABLE_SESSION_RECORDING=true
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./config:/app/config:ro
+      - ./recordings:/app/recordings
+    networks:
+      - gordp-network
+    restart: unless-stopped
+
+  # GoRDP with custom configuration
+  gordp-custom:
+    image: kdsmith18542/gordp:latest
+    container_name: gordp-custom
+    command: ["--config", "/app/config/custom.json"]
+    environment:
+      - RDP_HOST=${CUSTOM_RDP_HOST}
+      - RDP_PORT=${CUSTOM_RDP_PORT:-3389}
+      - RDP_USERNAME=${CUSTOM_RDP_USERNAME}
+      - RDP_PASSWORD=${CUSTOM_RDP_PASSWORD}
+      - ENABLE_MULTI_MONITOR=true
+      - ENABLE_VIRTUAL_CHANNELS=true
+    volumes:
+      - ./config/custom.json:/app/config/custom.json:ro
+      - ./logs:/app/logs
+      - ./certificates:/app/certificates:ro
+      - ./plugins:/app/plugins:ro
+    networks:
+      - gordp-network
+    restart: unless-stopped
+
+  # GoRDP Performance Monitor
+  gordp-monitor:
+    image: kdsmith18542/gordp:latest
+    container_name: gordp-monitor
+    command: ["--monitor", "--port", "7070"]
+    ports:
+      - "7070:7070"
+    environment:
+      - MONITOR_HOST=0.0.0.0
+      - MONITOR_PORT=7070
+      - ENABLE_METRICS=true
+      - ENABLE_ALERTS=true
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./config:/app/config:ro
+    networks:
+      - gordp-network
+    restart: unless-stopped
+
+  # GoRDP Plugin Manager
+  gordp-plugins:
+    image: kdsmith18542/gordp:latest
+    container_name: gordp-plugins
+    command: ["--plugin-manager", "--port", "6060"]
+    ports:
+      - "6060:6060"
+    environment:
+      - PLUGIN_HOST=0.0.0.0
+      - PLUGIN_PORT=6060
+      - PLUGIN_DIR=/app/plugins
+    volumes:
+      - ./plugins:/app/plugins
+      - ./logs:/app/logs
+      - ./config:/app/config:ro
+    networks:
+      - gordp-network
+    restart: unless-stopped
+
+  # GoRDP for development
+  gordp-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: gordp-dev
+    volumes:
+      - .:/app
+      - go-cache:/go
+    environment:
+      - GOOS=linux
+      - GOARCH=amd64
+    command: ["make", "test"]
+    networks:
+      - gordp-network
+
+  # GoRDP Qt Builder
+  gordp-qt-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: qt-builder
+    container_name: gordp-qt-builder
+    volumes:
+      - .:/app
+      - qt-cache:/root/.cache
+    environment:
+      - QT_QPA_PLATFORM=offscreen
+    command: ["make", "build-qt"]
+    networks:
+      - gordp-network
+
+  # Reverse proxy for web interface
+  nginx:
+    image: nginx:alpine
+    container_name: gordp-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - gordp-gateway
+      - gordp-management
+      - gordp-monitor
+      - gordp-plugins
+    networks:
+      - gordp-network
+    restart: unless-stopped
+
+  # Database for management console (optional)
+  postgres:
+    image: postgres:15-alpine
+    container_name: gordp-postgres
+    environment:
+      - POSTGRES_DB=gordp
+      - POSTGRES_USER=gordp
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-gordp123}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    networks:
+      - gordp-network
+    restart: unless-stopped
+
+  # Redis for session management (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: gordp-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - gordp-network
+    restart: unless-stopped
+
+  # InfluxDB for metrics (optional)
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: gordp-influxdb
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_PASSWORD:-gordp123}
+      - DOCKER_INFLUXDB_INIT_ORG=gordp
+      - DOCKER_INFLUXDB_INIT_BUCKET=metrics
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    networks:
+      - gordp-network
+    restart: unless-stopped
+
+  # Grafana for metrics visualization (optional)
+  grafana:
+    image: grafana/grafana:10.0-alpine
+    container_name: gordp-grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-gordp123}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - influxdb
+    networks:
+      - gordp-network
+    restart: unless-stopped
+
+volumes:
+  go-cache:
+  qt-cache:
+  postgres-data:
+  redis-data:
+  influxdb-data:
+  grafana-data:
+
+networks:
+  gordp-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16 

@@ -1,8 +1,10 @@
 package mcs
 
 import (
-	"github.com/GoFeGroup/gordp/core"
+	"bytes"
 	"os"
+
+	"github.com/kdsmith18542/gordp/core"
 )
 
 // ClientCoreData Version
@@ -153,4 +155,62 @@ func NewClientCoreData() *ClientCoreData {
 	}
 	copy(coreData.ClientName[:], core.UnicodeEncode(name))
 	return coreData
+}
+
+// MonitorLayout represents a single monitor's geometry and DPI
+// https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpbcgr/3c9e1b7b-6c3e-4e2a-8e2e-2e7e2e2e2e2e
+// Used in Monitor Layout PDU
+// All fields are in pixels
+// Flags: 0x01 = Primary monitor
+// See [MS-RDPBCGR] 2.2.1.13.1.2.1 MONITOR_DEF
+
+type MonitorLayout struct {
+	Left               int32
+	Top                int32
+	Right              int32
+	Bottom             int32
+	Flags              uint32 // 0x01 = Primary
+	MonitorIndex       uint32 // Optional, for client-side tracking
+	PhysicalWidthMm    uint32 // Optional, for DPI
+	PhysicalHeightMm   uint32 // Optional, for DPI
+	Orientation        uint32 // 0 = landscape, 1 = portrait
+	DesktopScaleFactor uint32 // DPI scaling (100, 125, 150, 200, etc.)
+	DeviceScaleFactor  uint32 // DPI scaling (100, 125, 150, 200, etc.)
+}
+
+// MonitorLayoutPDU represents the Monitor Layout PDU sent during negotiation
+// https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpbcgr/3c9e1b7b-6c3e-4e2a-8e2e-2e7e2e2e2e2e
+// Used to negotiate multi-monitor geometry
+
+type MonitorLayoutPDU struct {
+	UserDataHeader UserDataHeader // Type = CS_MONITOR
+	NumMonitors    uint32
+	Monitors       []MonitorLayout
+}
+
+func (pdu *MonitorLayoutPDU) Serialize() []byte {
+	buf := new(bytes.Buffer)
+	core.WriteLE(buf, pdu.UserDataHeader.Type)
+	core.WriteLE(buf, pdu.UserDataHeader.Len)
+	core.WriteLE(buf, pdu.NumMonitors)
+	for _, m := range pdu.Monitors {
+		core.WriteLE(buf, m.Left)
+		core.WriteLE(buf, m.Top)
+		core.WriteLE(buf, m.Right)
+		core.WriteLE(buf, m.Bottom)
+		core.WriteLE(buf, m.Flags)
+		core.WriteLE(buf, m.MonitorIndex)
+		core.WriteLE(buf, m.PhysicalWidthMm)
+		core.WriteLE(buf, m.PhysicalHeightMm)
+		core.WriteLE(buf, m.Orientation)
+		core.WriteLE(buf, m.DesktopScaleFactor)
+		core.WriteLE(buf, m.DeviceScaleFactor)
+	}
+	return buf.Bytes()
+}
+
+// Add multi-monitor support to ClientCoreData
+// (This is an extension, not part of the original struct)
+type MultiMonitorConfig struct {
+	Monitors []MonitorLayout
 }

@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ConnectionDialog</class>
+ <widget class="QDialog" name="ConnectionDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>500</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Connect to RDP Server</string>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QGroupBox" name="groupBoxConnection">
+     <property name="title">
+      <string>Connection Settings</string>
+     </property>
+     <layout class="QFormLayout" name="formLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelServer">
+        <property name="text">
+         <string>Server Address:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QLineEdit" name="serverEdit">
+          <property name="placeholderText">
+           <string>Enter server address or IP</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="portSpinBox">
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>65535</number>
+          </property>
+          <property name="value">
+           <number>3389</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelUsername">
+        <property name="text">
+         <string>Username:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="usernameEdit">
+        <property name="placeholderText">
+         <string>Enter username</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="labelPassword">
+        <property name="text">
+         <string>Password:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="passwordEdit">
+        <property name="echoMode">
+         <enum>QLineEdit::Password</enum>
+        </property>
+        <property name="placeholderText">
+         <string>Enter password</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QCheckBox" name="savePasswordCheckBox">
+        <property name="text">
+         <string>Save password</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBoxDisplay">
+     <property name="title">
+      <string>Display Settings</string>
+     </property>
+     <layout class="QFormLayout" name="formLayout_2">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelColorDepth">
+        <property name="text">
+         <string>Color Depth:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="colorDepthComboBox">
+        <item>
+         <property name="text">
+          <string>8-bit (256 colors)</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>16-bit (High Color)</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>24-bit (True Color)</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>32-bit (True Color + Alpha)</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelResolution">
+        <property name="text">
+         <string>Resolution:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="resolutionComboBox">
+        <item>
+         <property name="text">
+          <string>1024x768</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1280x720</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1280x1024</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1366x768</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1440x900</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1600x900</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1920x1080</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Fullscreen</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Custom...</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QCheckBox" name="fullscreenCheckBox">
+        <property name="text">
+         <string>Start in fullscreen mode</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBoxFeatures">
+     <property name="title">
+      <string>Features</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QCheckBox" name="audioCheckBox">
+        <property name="text">
+         <string>Enable audio</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="clipboardCheckBox">
+        <property name="text">
+         <string>Enable clipboard sharing</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="driveRedirectionCheckBox">
+        <property name="text">
+         <string>Enable drive redirection</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QPushButton" name="historyButton">
+       <property name="text">
+        <string>History</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="favoritesButton">
+       <property name="text">
+        <string>Favorites</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="testButton">
+       <property name="text">
+        <string>Test Connection</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="cancelButton">
+       <property name="text">
+        <string>Cancel</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="connectButton">
+       <property name="text">
+        <string>Connect</string>
+       </property>
+       <property name="default">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui> 

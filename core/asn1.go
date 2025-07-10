@@ -1,4 +1,12 @@
-// Package asn1 --- 辅助读取ASN1结构的数据
+// Package core provides essential utilities and data structures for the GoRDP library.
+// This package includes:
+//   - Generic data structures (Cache, Queue, Stack, Option, Result, Either)
+//   - Error handling utilities with context and structured errors
+//   - Network stream management
+//   - Cryptographic utilities (MD4, HMAC-MD5, NTLM hash functions)
+//   - ASN.1 parsing and serialization
+//   - Async utilities for concurrent operations
+//   - Type-safe generic collections and utilities
 package core
 
 import (

@@ -1,8 +1,8 @@
 package capability
 
 import (
-	"github.com/GoFeGroup/gordp/core"
-	"github.com/GoFeGroup/gordp/proto/mcs"
+	"github.com/kdsmith18542/gordp/core"
+	"github.com/kdsmith18542/gordp/proto/mcs"
 	"io"
 )
 

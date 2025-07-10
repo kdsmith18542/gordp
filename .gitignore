@@ -5,9 +5,15 @@
 *.so
 *.dylib
 gordp
+gordp.exe
+gordp-gui
+gordp-gui.exe
+gordp-qt-gui
+gordp-qt-gui.exe
 
 # Test binary, built with `go test -c`
 *.test
+*.test.exe
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
@@ -46,11 +52,700 @@ Thumbs.db
 bin/
 dist/
 build/
+out/
 
 # Coverage and profiling
 coverage.*
 *.prof
 *.trace
+coverage.html
+coverage.xml
+
+# Go specific
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+*.exe~
+*.test
+*.out
+
+# Go workspace
+go.work
+
+# Go modules
+go.sum
+
+# RDP specific files
+*.rdp
+*.rdp.bak
+*.rdp.tmp
+rdp_config.json
+rdp_config.local.json
+
+# Certificate files
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+*.p7b
+*.p7c
+*.der
+*.crt.bak
+*.key.bak
+
+# Log files
+*.log
+logs/
+*.log.*
+debug.log
+error.log
+access.log
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+.cache/
+tmp/
+temp/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Configuration files with sensitive data
+config.local.json
+config.production.json
+config.staging.json
+secrets.json
+credentials.json
+
+# Test artifacts
+test-results/
+test-output/
+*.test.log
+integration-test-results/
+
+# Performance and profiling
+*.pprof
+*.trace
+*.prof
+profile.out
+
+# Documentation build artifacts
+docs/_build/
+docs/build/
+site/
+
+# Docker
+.dockerignore
+Dockerfile.local
+docker-compose.override.yml
+
+# Kubernetes
+*.kubeconfig
+kubeconfig
+
+# Backup files
+*.backup
+*.bak
+*.old
+*.orig
+
+# Archive files
+*.tar
+*.tar.gz
+*.zip
+*.rar
+*.7z
 
 # Project specific
 plan.md
+TODO.md
+NOTES.md
+*.todo
+*.note
+
+# Mock and test data
+mock_data/
+test_data/
+sample_data/
+*.mock
+*.testdata
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Node.js (if using any web components)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python (if using any Python scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Java (if using any Java components)
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+
+# C/C++ (if using any CGO components)
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+*.app
+
+# Rust (if using any Rust components)
+target/
+Cargo.lock
+*.rlib
+*.rmeta
+
+# WebRTC and web components
+webrtc/
+web/
+*.wasm
+*.wat
+
+# Mobile development
+android/
+ios/
+*.apk
+*.ipa
+*.aab
+
+# CI/CD
+.github/workflows/.env
+.gitlab-ci.yml.local
+.circleci/.env
+
+# Local development
+.local/
+local/
+dev/
+development/
+
+# Production artifacts
+production/
+staging/
+deploy/
+deployment/
+
+# Monitoring and metrics
+metrics/
+monitoring/
+*.metrics
+*.stats
+
+# Security
+*.key
+*.pem
+*.crt
+*.csr
+*.srl
+*.p12
+*.pfx
+*.p7b
+*.p7c
+*.der
+*.p8
+*.mobileprovision
+*.cer
+*.crt.bak
+*.key.bak
+*.pem.bak
+
+# Network captures
+*.pcap
+*.pcapng
+*.cap
+*.dump
+
+# Memory dumps
+*.dmp
+*.hprof
+*.dump
+
+# Crash reports
+crash-reports/
+*.crash
+*.minidump
+
+# Performance data
+perf.data
+perf.data.old
+*.perf
+
+# System files
+.fuse_hidden*
+.nfs*
+*.pid
+*.seed
+*.pid.lock
+
+# Application specific
+sessions/
+cache/
+data/
+uploads/
+downloads/
+
+# Qt GUI specific build artifacts
+qt-gui/build/
+qt-gui/.qt/
+qt-gui/gordp-gui_autogen/
+qt-gui/CMakeCache.txt
+qt-gui/cmake_install.cmake
+qt-gui/Makefile
+qt-gui/*.desktop
+qt-gui/install.sh
+qt-gui/test_*.sh
+
+# Qt MOC, UIC, and RCC generated files
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+*.moc
+
+# Qt Designer files
+*.ui.bak
+*.ui~
+
+# Qt Creator files
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qbs.user.*
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Cross-platform GUI builds
+build/gui/
+build/qt-gui/
+build/test_*.sh
+build/install.sh
+build/package.sh
+
+# Platform-specific binaries
+gordp-gui-linux-*
+gordp-gui-windows-*
+gordp-gui-macos-*
+gordp-qt-gui-linux-*
+gordp-qt-gui-windows-*
+gordp-qt-gui-macos-*
+
+# Test scripts and packages
+test_go_gui.sh
+test_qt_gui.sh
+gordp-gui-*.tar.gz
+gordp-gui-*.zip
+
+# Plugin build artifacts
+plugin/build/
+plugin/*.so
+plugin/*.dll
+plugin/*.dylib
+
+# WebRTC gateway artifacts
+gateway/webrtc/build/
+gateway/webrtc/dist/
+gateway/webrtc/node_modules/
+
+# Management console artifacts
+management/build/
+management/dist/
+management/*.db
+
+# Performance monitoring artifacts
+performance/data/
+performance/logs/
+performance/metrics/
+
+# Connection history and favorites
+history/
+favorites/
+*.history
+*.favorites
+
+# Session recordings
+recordings/
+*.recording
+*.session
+
+# Audio/video artifacts
+audio/
+video/
+*.wav
+*.mp3
+*.mp4
+*.avi
+
+# Clipboard data
+clipboard/
+*.clipboard
+
+# Device redirection artifacts
+devices/
+*.device
+
+# Smart card artifacts
+smartcard/
+*.card
+
+# Biometric artifacts
+biometrics/
+*.bio
+
+# Certificate management
+certificates/
+*.pem
+*.crt
+*.key
+*.p12
+*.pfx
+
+# Enterprise features
+enterprise/
+ad/
+gpo/
+*.policy
+
+# Cloud integration
+cloud/
+*.cloud
+*.tenant
+
+# AI/ML artifacts
+ai/
+ml/
+*.model
+*.weights
+
+# Analytics and reporting
+analytics/
+reports/
+*.report
+*.analytics
+
+# Multi-tenant data
+tenants/
+*.tenant
+
+# Session management
+sessions/
+*.session
+
+# Cache directories
+.cache/
+cache/
+*.cache
+
+# Temporary build directories
+tmp/
+temp/
+*.tmp
+
+# Generated documentation
+docs/generated/
+docs/api.md
+
+# Local configuration overrides
+config/local/
+config/dev/
+config/test/
+
+# Development tools artifacts
+.golangci-lint/
+.gosec/
+*.lint
+
+# IDE specific
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.idea/workspace.xml
+.idea/tasks.xml
+
+# OS specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Package manager artifacts
+package-lock.json
+yarn.lock
+composer.lock
+
+# Local development files
+*.local
+local.*
+dev.*
+test.*
+
+# Backup and temporary files
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+*.swp
+*.swo
+*~
+
+# Generated source files
+generated/
+gen/
+*.gen.go
+*.gen.cpp
+*.gen.h
+
+# Build system artifacts
+.ninja_deps
+.ninja_log
+build.ninja
+
+# Qt deployment artifacts
+deploy/
+*.app/
+*.exe
+*.dmg
+*.deb
+*.rpm
+*.msi
+
+# Cross-compilation artifacts
+cross/
+crossbuild/
+
+# Release artifacts
+release/
+releases/
+*.tar.gz
+*.zip
+*.deb
+*.rpm
+*.msi
+*.dmg
+*.app
+
+# Development environment
+.env.development
+.env.test
+.env.production
+.env.local
+
+# Local overrides
+docker-compose.override.yml
+docker-compose.local.yml
+
+# Test coverage reports
+coverage/
+*.coverage
+*.cov
+
+# Benchmark results
+benchmarks/
+*.bench
+*.benchmark
+
+# Profiling data
+profiles/
+*.prof
+*.pprof
+
+# Memory profiling
+*.memprof
+*.heap
+
+# CPU profiling
+*.cpuprof
+*.cpu
+
+# Trace files
+*.trace
+*.trace.gz
+
+# Debug symbols
+*.debug
+*.sym
+*.pdb
+
+# Core dumps
+core
+core.*
+*.core
+
+# Crash dumps
+*.crash
+*.dmp
+*.minidump
+
+# System logs
+*.syslog
+*.log.*
+*.log.old
+
+# Application logs
+app.log
+app.log.*
+app.log.old
+
+# Error logs
+error.log
+error.log.*
+error.log.old
+
+# Access logs
+access.log
+access.log.*
+access.log.old
+
+# Debug logs
+debug.log
+debug.log.*
+debug.log.old
+
+# Performance logs
+perf.log
+perf.log.*
+perf.log.old
+
+# Security logs
+security.log
+security.log.*
+security.log.old
+
+# Audit logs
+audit.log
+audit.log.*
+audit.log.old
+
+# Session logs
+session.log
+session.log.*
+session.log.old
+
+# Connection logs
+connection.log
+connection.log.*
+connection.log.old
+
+# Plugin logs
+plugin.log
+plugin.log.*
+plugin.log.old
+
+# Gateway logs
+gateway.log
+gateway.log.*
+gateway.log.old
+
+# Management logs
+management.log
+management.log.*
+management.log.old
+
+# WebRTC logs
+webrtc.log
+webrtc.log.*
+webrtc.log.old
+
+# Mobile logs
+mobile.log
+mobile.log.*
+mobile.log.old
+
+# Cloud logs
+cloud.log
+cloud.log.*
+cloud.log.old
+
+# AI logs
+ai.log
+ai.log.*
+ai.log.old
+
+# Analytics logs
+analytics.log
+analytics.log.*
+analytics.log.old
+
+# Enterprise logs
+enterprise.log
+enterprise.log.*
+enterprise.log.old
+
+# Multi-tenant logs
+tenant.log
+tenant.log.*
+tenant.log.old
+
+# Local development logs
+dev.log
+dev.log.*
+dev.log.old
+
+# Test logs
+test.log
+test.log.*
+test.log.old
+
+# Build logs
+build.log
+build.log.*
+build.log.old
+
+# Install logs
+install.log
+install.log.*
+install.log.old
+
+# Package logs
+package.log
+package.log.*
+package.log.old
+
+# Deploy logs
+deploy.log
+deploy.log.*
+deploy.log.old
+
+# CI/CD logs
+ci.log
+ci.log.*
+ci.log.old
+
+# Release logs
+release.log
+release.log.*
+release.log.old

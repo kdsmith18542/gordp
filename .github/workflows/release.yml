@@ -1,0 +1,215 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+            binary_name: gordp-linux-amd64
+          - os: linux
+            arch: arm64
+            binary_name: gordp-linux-arm64
+          - os: windows
+            arch: amd64
+            binary_name: gordp-windows-amd64.exe
+          - os: darwin
+            arch: amd64
+            binary_name: gordp-darwin-amd64
+          - os: darwin
+            arch: arm64
+            binary_name: gordp-darwin-arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+          BINARY_NAME: ${{ matrix.binary_name }}
+        run: |
+          # Get version from tag or input
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=${{ github.event.inputs.version }}
+          fi
+          
+          # Build flags
+          LDFLAGS="-X main.Version=${VERSION} -X main.BuildTime=$(date -u '+%Y-%m-%d_%H:%M:%S') -X main.GitCommit=$(git rev-parse HEAD)"
+          
+          # Build binary
+          go build -ldflags "$LDFLAGS" -o $BINARY_NAME .
+          
+          # Create checksum
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            certUtil -hashfile $BINARY_NAME SHA256 > $BINARY_NAME.sha256
+          else
+            sha256sum $BINARY_NAME > $BINARY_NAME.sha256
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.binary_name }}
+          path: |
+            ${{ matrix.binary_name }}
+            ${{ matrix.binary_name }}.sha256
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  docker:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Download Linux binary
+        uses: actions/download-artifact@v4
+        with:
+          name: gordp-linux-amd64
+          path: dist/
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            kdsmith18542/gordp:latest
+            kdsmith18542/gordp:${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  homebrew:
+    needs: release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout Homebrew tap
+        uses: actions/checkout@v4
+        with:
+          repository: kdsmith18542/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Update Homebrew formula
+        run: |
+          cd homebrew-tap
+          
+          # Get version
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=${{ github.event.inputs.version }}
+          fi
+          
+          # Download and calculate SHA256
+          curl -L "https://github.com/kdsmith18542/gordp/releases/download/${VERSION}/gordp-darwin-amd64" -o gordp-darwin-amd64
+          SHA256=$(shasum -a 256 gordp-darwin-amd64 | cut -d' ' -f1)
+          
+          # Update formula
+          sed -i "s/version \"[^\"]*\"/version \"${VERSION#v}\"/" Formula/gordp.rb
+          sed -i "s/sha256 \"[^\"]*\"/sha256 \"${SHA256}\"/" Formula/gordp.rb
+          
+          # Commit and push
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add Formula/gordp.rb
+          git commit -m "Update gordp to ${VERSION}"
+          git push
+
+  chocolatey:
+    needs: release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout Chocolatey package
+        uses: actions/checkout@v4
+        with:
+          repository: kdsmith18542/chocolatey-packages
+          token: ${{ secrets.CHOCOLATEY_TOKEN }}
+          path: chocolatey-packages
+
+      - name: Update Chocolatey package
+        run: |
+          cd chocolatey-packages/gordp
+          
+          # Get version
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=${{ github.event.inputs.version }}
+          fi
+          
+          # Download and calculate SHA256
+          curl -L "https://github.com/kdsmith18542/gordp/releases/download/${VERSION}/gordp-windows-amd64.exe" -o gordp-windows-amd64.exe
+          SHA256=$(sha256sum gordp-windows-amd64.exe | cut -d' ' -f1)
+          
+          # Update nuspec
+          sed -i "s/<version>[^<]*<\/version>/<version>${VERSION#v}<\/version>/" gordp.nuspec
+          sed -i "s/checksum=\"[^\"]*\"/checksum=\"${SHA256}\"/" tools/chocolateyinstall.ps1
+          
+          # Commit and push
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "Update gordp to ${VERSION}"
+          git push 

@@ -2,15 +2,175 @@ package t128
 
 import (
 	"bytes"
+	"crypto/rc4"
+	"crypto/sha1"
 	"fmt"
 	"io"
+	"sync"
+	"time"
 
-	"github.com/GoFeGroup/gordp/core"
-	"github.com/GoFeGroup/gordp/glog"
-	"github.com/GoFeGroup/gordp/proto/fastpath"
-	"github.com/GoFeGroup/gordp/proto/mcs"
-	"github.com/GoFeGroup/gordp/proto/x224"
+	"github.com/kdsmith18542/gordp/core"
+	"github.com/kdsmith18542/gordp/glog"
+	"github.com/kdsmith18542/gordp/proto/fastpath"
+	"github.com/kdsmith18542/gordp/proto/mcs"
+	"github.com/kdsmith18542/gordp/proto/x224"
 )
+
+// FastPathEncryptionManager handles RDP encryption for FastPath data
+type FastPathEncryptionManager struct {
+	encryptCipher *rc4.Cipher
+	decryptCipher *rc4.Cipher
+	encryptKey    []byte
+	decryptKey    []byte
+	seqNum        uint32
+	mutex         sync.Mutex
+	stats         *EncryptionStats
+}
+
+// EncryptionStats tracks encryption performance
+type EncryptionStats struct {
+	TotalEncrypted  int64
+	TotalDecrypted  int64
+	EncryptionTime  int64 // nanoseconds
+	DecryptionTime  int64 // nanoseconds
+	Errors          int64
+	SessionKeyCount int64
+}
+
+// NewFastPathEncryptionManager creates a new FastPath encryption manager
+func NewFastPathEncryptionManager() *FastPathEncryptionManager {
+	return &FastPathEncryptionManager{
+		stats: &EncryptionStats{},
+	}
+}
+
+// SetSessionKeys sets the encryption and decryption session keys
+func (em *FastPathEncryptionManager) SetSessionKeys(encryptKey, decryptKey []byte) error {
+	em.mutex.Lock()
+	defer em.mutex.Unlock()
+
+	em.encryptKey = make([]byte, len(encryptKey))
+	copy(em.encryptKey, encryptKey)
+	em.decryptKey = make([]byte, len(decryptKey))
+	copy(em.decryptKey, decryptKey)
+
+	// Create RC4 ciphers
+	var err error
+	em.encryptCipher, err = rc4.NewCipher(em.encryptKey)
+	if err != nil {
+		em.stats.Errors++
+		return fmt.Errorf("failed to create RC4 encryption cipher: %v", err)
+	}
+
+	em.decryptCipher, err = rc4.NewCipher(em.decryptKey)
+	if err != nil {
+		em.stats.Errors++
+		return fmt.Errorf("failed to create RC4 decryption cipher: %v", err)
+	}
+
+	em.stats.SessionKeyCount++
+	glog.Debugf("FastPath encryption manager initialized with session keys")
+	return nil
+}
+
+// Encrypt encrypts FastPath data using RC4
+func (em *FastPathEncryptionManager) Encrypt(data []byte) ([]byte, error) {
+	em.mutex.Lock()
+	defer em.mutex.Unlock()
+
+	if em.encryptCipher == nil {
+		return nil, fmt.Errorf("encryption cipher not initialized")
+	}
+
+	startTime := time.Now()
+	defer func() {
+		em.stats.EncryptionTime = time.Since(startTime).Nanoseconds()
+	}()
+
+	// Create a copy of the data to encrypt
+	encrypted := make([]byte, len(data))
+	copy(encrypted, data)
+
+	// Encrypt the data in-place
+	em.encryptCipher.XORKeyStream(encrypted, encrypted)
+
+	em.stats.TotalEncrypted += int64(len(data))
+	glog.Debugf("FastPath encryption: %d bytes encrypted", len(data))
+
+	return encrypted, nil
+}
+
+// Decrypt decrypts FastPath data using RC4
+func (em *FastPathEncryptionManager) Decrypt(data []byte) ([]byte, error) {
+	em.mutex.Lock()
+	defer em.mutex.Unlock()
+
+	if em.decryptCipher == nil {
+		return nil, fmt.Errorf("decryption cipher not initialized")
+	}
+
+	startTime := time.Now()
+	defer func() {
+		em.stats.DecryptionTime = time.Since(startTime).Nanoseconds()
+	}()
+
+	// Create a copy of the data to decrypt
+	decrypted := make([]byte, len(data))
+	copy(decrypted, data)
+
+	// Decrypt the data in-place
+	em.decryptCipher.XORKeyStream(decrypted, decrypted)
+
+	em.stats.TotalDecrypted += int64(len(data))
+	glog.Debugf("FastPath decryption: %d bytes decrypted", len(data))
+
+	return decrypted, nil
+}
+
+// GenerateSessionKeys generates session keys from the master key
+func (em *FastPathEncryptionManager) GenerateSessionKeys(masterKey, clientRandom, serverRandom []byte) error {
+	// Generate client-to-server key
+	clientToServerKey := em.generateKey(masterKey, clientRandom, serverRandom, []byte("client-to-server"))
+
+	// Generate server-to-client key
+	serverToClientKey := em.generateKey(masterKey, clientRandom, serverRandom, []byte("server-to-client"))
+
+	return em.SetSessionKeys(clientToServerKey, serverToClientKey)
+}
+
+// generateKey generates a session key using the RDP key derivation function
+func (em *FastPathEncryptionManager) generateKey(masterKey, clientRandom, serverRandom, magic []byte) []byte {
+	// RDP key derivation: SHA1(masterKey + magic + clientRandom + serverRandom)
+	h := sha1.New()
+	h.Write(masterKey)
+	h.Write(magic)
+	h.Write(clientRandom)
+	h.Write(serverRandom)
+	return h.Sum(nil)
+}
+
+// GetStats returns encryption statistics
+func (em *FastPathEncryptionManager) GetStats() *EncryptionStats {
+	em.mutex.Lock()
+	defer em.mutex.Unlock()
+
+	stats := *em.stats // Copy to avoid race conditions
+	return &stats
+}
+
+// ResetStats resets encryption statistics
+func (em *FastPathEncryptionManager) ResetStats() {
+	em.mutex.Lock()
+	defer em.mutex.Unlock()
+	em.stats = &EncryptionStats{}
+}
+
+// IsInitialized returns true if the encryption manager is properly initialized
+func (em *FastPathEncryptionManager) IsInitialized() bool {
+	em.mutex.Lock()
+	defer em.mutex.Unlock()
+	return em.encryptCipher != nil && em.decryptCipher != nil
+}
 
 type PDU interface {
 	iPDU()
@@ -98,16 +258,96 @@ func WriteDataPdu(w io.Writer, userId uint16, shareId uint32, pdu DataPDU) {
 	WritePDU(w, userId, NewDataPdu(pdu, shareId))
 }
 
+// Global FastPath encryption manager
+var fastPathEncryptionManager = NewFastPathEncryptionManager()
+
+// SetFastPathEncryptionManager sets the global FastPath encryption manager
+func SetFastPathEncryptionManager(manager *FastPathEncryptionManager) {
+	fastPathEncryptionManager = manager
+}
+
+// GetFastPathEncryptionManager returns the global FastPath encryption manager
+func GetFastPathEncryptionManager() *FastPathEncryptionManager {
+	return fastPathEncryptionManager
+}
+
 func ReadFastPathPDU(r io.Reader) PDU {
 	fp := fastpath.Read(r)
+
+	// Handle encryption if present
 	if fp.Header.EncryptionFlags != 0 {
-		core.Throw("not implement")
+		glog.Debugf("FastPath encryption detected (flags: %d), decrypting data", fp.Header.EncryptionFlags)
+
+		if !fastPathEncryptionManager.IsInitialized() {
+			core.Throw(fmt.Errorf("FastPath encryption required but encryption manager not initialized"))
+		}
+
+		// Decrypt the data
+		decryptedData, err := fastPathEncryptionManager.Decrypt(fp.Data)
+		if err != nil {
+			core.Throw(fmt.Errorf("failed to decrypt FastPath data: %v", err))
+		}
+
+		fp.Data = decryptedData
+		glog.Debugf("FastPath data decrypted: %d bytes", len(decryptedData))
 	}
+
 	glog.Debugf("analyse FastPathPDU")
 	return (&TsFpUpdatePDU{}).Read(bytes.NewReader(fp.Data))
 }
 
 func WriteFastPathInputPDU(w io.Writer, pdu *TsFpInputPdu) {
 	data := pdu.Serialize()
-	fastpath.Write(w, data)
+
+	// Check if encryption is enabled
+	if fastPathEncryptionManager.IsInitialized() {
+		glog.Debugf("Encrypting FastPath input data: %d bytes", len(data))
+
+		// Encrypt the data
+		encryptedData, err := fastPathEncryptionManager.Encrypt(data)
+		if err != nil {
+			core.Throw(fmt.Errorf("failed to encrypt FastPath data: %v", err))
+		}
+
+		data = encryptedData
+
+		// Set encryption flags in the header
+		header := fastpath.Header{
+			EncryptionFlags: 1, // Basic encryption
+			Length:          len(data),
+		}
+		header.Write(w)
+		core.WriteFull(w, data)
+	} else {
+		// No encryption
+		fastpath.Write(w, data)
+	}
+}
+
+// WriteFastPathPDU writes a FastPath PDU with optional encryption
+func WriteFastPathPDU(w io.Writer, pdu PDU, encrypt bool) {
+	data := pdu.Serialize()
+
+	if encrypt && fastPathEncryptionManager.IsInitialized() {
+		glog.Debugf("Encrypting FastPath PDU: %d bytes", len(data))
+
+		// Encrypt the data
+		encryptedData, err := fastPathEncryptionManager.Encrypt(data)
+		if err != nil {
+			core.Throw(fmt.Errorf("failed to encrypt FastPath PDU: %v", err))
+		}
+
+		data = encryptedData
+
+		// Set encryption flags in the header
+		header := fastpath.Header{
+			EncryptionFlags: 1, // Basic encryption
+			Length:          len(data),
+		}
+		header.Write(w)
+		core.WriteFull(w, data)
+	} else {
+		// No encryption
+		fastpath.Write(w, data)
+	}
 }

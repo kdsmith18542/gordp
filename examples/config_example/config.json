@@ -1,0 +1,109 @@
+{
+  "connection": {
+    "address": "192.168.1.100",
+    "port": 3389,
+    "connect_timeout": "10s",
+    "read_timeout": "30s",
+    "write_timeout": "30s",
+    "keep_alive": true,
+    "keep_alive_period": "30s",
+    "max_retries": 3,
+    "retry_delay": "1s"
+  },
+  "authentication": {
+    "username": "administrator",
+    "password": "password",
+    "domain": "WORKGROUP",
+    "smart_card": false,
+    "smart_card_reader": "",
+    "use_nla": true,
+    "use_ssl": true
+  },
+  "display": {
+    "width": 1920,
+    "height": 1080,
+    "color_depth": 24,
+    "monitors": [
+      {
+        "left": 0,
+        "top": 0,
+        "right": 1920,
+        "bottom": 1080,
+        "flags": 1,
+        "monitor_index": 0,
+        "physical_width_mm": 520,
+        "physical_height_mm": 290,
+        "orientation": 0,
+        "desktop_scale_factor": 100,
+        "device_scale_factor": 100
+      },
+      {
+        "left": 1920,
+        "top": 0,
+        "right": 3840,
+        "bottom": 1080,
+        "flags": 0,
+        "monitor_index": 1,
+        "physical_width_mm": 520,
+        "physical_height_mm": 290,
+        "orientation": 0,
+        "desktop_scale_factor": 100,
+        "device_scale_factor": 100
+      }
+    ],
+    "high_dpi": false,
+    "desktop_scale": 100,
+    "device_scale": 100,
+    "wallpaper": false,
+    "themes": false,
+    "font_smoothing": true,
+    "full_window_drag": true,
+    "menu_animations": false
+  },
+  "performance": {
+    "bitmap_cache": true,
+    "bitmap_cache_size": 1000,
+    "compression": true,
+    "compression_level": 6,
+    "network_auto_tune": true,
+    "bandwidth_limit": 0,
+    "frame_rate": 30,
+    "quality_level": "high"
+  },
+  "security": {
+    "fips_compliance": false,
+    "certificate_validation": true,
+    "certificate_path": "",
+    "private_key_path": "",
+    "trusted_cas": "",
+    "encryption_level": "high"
+  },
+  "input": {
+    "keyboard_layout": "en-US",
+    "mouse_sensitivity": 100,
+    "mouse_acceleration": false,
+    "unicode_input": true,
+    "ime_input": true,
+    "input_buffer_size": 1024
+  },
+  "virtual_channels": {
+    "clipboard": true,
+    "audio": true,
+    "device": true,
+    "printer": false,
+    "drive": false,
+    "port": false,
+    "smart_card": false,
+    "custom_channels": ["MY_CUSTOM_CHANNEL"]
+  },
+  "logging": {
+    "level": "info",
+    "format": "json",
+    "output": "stdout",
+    "file": "",
+    "max_size": 100,
+    "max_backups": 3,
+    "max_age": 28,
+    "compress": true
+  }
+} 

@@ -7,7 +7,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/GoFeGroup/gordp/glog"
+	"github.com/kdsmith18542/gordp/glog"
 )
 
 // BitmapCacheManager manages multiple bitmap caches and provides compression
@@ -234,6 +234,49 @@ func (bcm *BitmapCacheManager) OptimizeBitmapData(bitmapData *TsBitmapData) (*Ts
 	}
 
 	return bitmapData, false
+}
+
+// GetCachedBitmap retrieves a cached bitmap by cache ID and index
+func (bcm *BitmapCacheManager) GetCachedBitmap(cacheId uint16, cacheIndex uint16, key1, key2 uint32) *TsBitmapData {
+	bcm.mutex.RLock()
+	defer bcm.mutex.RUnlock()
+
+	// Convert cache ID to array index
+	if cacheId >= 3 {
+		glog.Warnf("Invalid cache ID: %d", cacheId)
+		return nil
+	}
+
+	cache := bcm.caches[cacheId]
+	if cache == nil {
+		glog.Warnf("Cache %d not found", cacheId)
+		return nil
+	}
+
+	// Reconstruct the key from key1 and key2
+	key := uint64(key2)<<32 | uint64(key1)
+
+	// Try to get from cache
+	if entry, found := cache.Get(key); found {
+		glog.Debugf("Retrieved cached bitmap: cache=%d, index=%d, key=%016X, size=%dx%d",
+			cacheId, cacheIndex, key, entry.Width, entry.Height)
+
+		return &TsBitmapData{
+			DestLeft:         0, // Will be set by caller
+			DestTop:          0, // Will be set by caller
+			DestRight:        entry.Width,
+			DestBottom:       entry.Height,
+			Width:            entry.Width,
+			Height:           entry.Height,
+			BitsPerPixel:     entry.Bpp,
+			Flags:            0,
+			BitmapLength:     uint16(len(entry.Data)),
+			BitmapDataStream: entry.Data,
+		}
+	}
+
+	glog.Warnf("Cached bitmap not found: cache=%d, index=%d, key=%016X", cacheId, cacheIndex, key)
+	return nil
 }
 
 // CreateCachedBitmapUpdate creates a cached bitmap update PDU

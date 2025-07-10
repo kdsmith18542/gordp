@@ -6,7 +6,7 @@ import (
 	"image/color"
 	"io"
 
-	"github.com/GoFeGroup/gordp/core"
+	"github.com/kdsmith18542/gordp/core"
 )
 
 const (
@@ -152,7 +152,7 @@ func readPixel(r io.Reader, bpp int) uint32 {
 	case 3:
 		return uint32(ReadByte(r)) | uint32(ReadShortLE(r))<<8
 	}
-	core.ThrowError("invalid bpp")
+	core.ThrowErrorString("invalid bpp")
 	return 0
 }
 
@@ -289,7 +289,8 @@ func rleDecompress(w, h, bpp int, data []byte) image.Image {
 				for ; cBits > 0; cBits-- {
 					pixel := peekPixel(dest, w*getPixelSize(bpp), bpp) // 查找上一行像素
 					if bitmask&0x1 > 0 {
-						pixel ^= fgPel // FIXME
+						// RDP FGBG: XOR with foreground color per spec
+						pixel ^= fgPel
 					}
 					writePixel(dest, pixel, bpp)
 					bitmask >>= 1
@@ -305,7 +306,8 @@ func rleDecompress(w, h, bpp int, data []byte) image.Image {
 			for ; cBits > 0; cBits-- {
 				pixel := peekPixel(dest, w*getPixelSize(bpp), bpp) // 查找上一行像素
 				if bitmask&0x1 > 0 {
-					pixel ^= fgPel // FIXME
+					// RDP Special FGBG 1: XOR with foreground color per spec
+					pixel ^= fgPel
 				}
 				writePixel(dest, pixel, bpp)
 				bitmask >>= 1
@@ -321,7 +323,8 @@ func rleDecompress(w, h, bpp int, data []byte) image.Image {
 			for ; cBits > 0; cBits-- {
 				pixel := peekPixel(dest, w*getPixelSize(bpp), bpp) // 查找上一行像素
 				if bitmask&0x1 > 0 {
-					pixel ^= fgPel // FIXME
+					// RDP Special FGBG 2: XOR with foreground color per spec
+					pixel ^= fgPel
 				}
 				writePixel(dest, pixel, bpp)
 				bitmask >>= 1

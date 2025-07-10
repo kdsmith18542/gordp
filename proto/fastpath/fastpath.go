@@ -3,8 +3,8 @@ package fastpath
 import (
 	"io"
 
-	"github.com/GoFeGroup/gordp/core"
-	"github.com/GoFeGroup/gordp/proto/mcs/per"
+	"github.com/kdsmith18542/gordp/core"
+	"github.com/kdsmith18542/gordp/proto/mcs/per"
 )
 
 type Header struct {

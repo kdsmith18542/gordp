@@ -6,7 +6,7 @@ import (
 	"crypto/rc4"
 	"io"
 
-	"github.com/GoFeGroup/gordp/core"
+	"github.com/kdsmith18542/gordp/core"
 )
 
 // AuthenticateMessage 认证信息

@@ -1,8 +1,9 @@
 package t128
 
 import (
-	"github.com/GoFeGroup/gordp/core"
 	"io"
+
+	"github.com/kdsmith18542/gordp/core"
 )
 
 // TsFontMapPDU
@@ -21,8 +22,8 @@ func (t *TsFontMapPDU) Read(r io.Reader) DataPDU {
 }
 
 func (t *TsFontMapPDU) Serialize() []byte {
-	//TODO implement me
-	panic("implement me")
+	// Serialize all fields as little-endian
+	return core.ToLE(t)
 }
 
 func (t *TsFontMapPDU) Type2() uint8 {

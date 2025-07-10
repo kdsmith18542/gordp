@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/GoFeGroup/gordp/core"
-	"github.com/GoFeGroup/gordp/glog"
-	"github.com/GoFeGroup/gordp/proto/capability"
+	"github.com/kdsmith18542/gordp/core"
+	"github.com/kdsmith18542/gordp/glog"
+	"github.com/kdsmith18542/gordp/proto/capability"
 )
 
 // TsConfirmActivePduData
@@ -29,13 +29,27 @@ func (d *TsConfirmActivePduData) Type() uint16 {
 func (d *TsConfirmActivePduData) iPDU() {}
 
 func (d *TsConfirmActivePduData) Read(r io.Reader) PDU {
-	core.Throw("not implement")
+	core.ReadLE(r, &d.SharedId)
+	core.ReadLE(r, &d.OriginatorId)
+	core.ReadLE(r, &d.LengthSourceDescriptor)
+	core.ReadLE(r, &d.LengthCombinedCapabilities)
+	d.SourceDescriptor = core.ReadBytes(r, int(d.LengthSourceDescriptor))
+	core.ReadLE(r, &d.NumberCapabilities)
+	core.ReadLE(r, &d.Pad2Octets)
+
+	// Read capability sets
+	d.CapabilitySets = make([]capability.TsCapsSet, 0, d.NumberCapabilities)
+	for i := uint16(0); i < d.NumberCapabilities; i++ {
+		cap := capability.Read(r)
+		d.CapabilitySets = append(d.CapabilitySets, cap)
+	}
+
 	return d
 }
 
 func (d *TsConfirmActivePduData) Write(w io.Writer) {
 	capsBytes := capability.Serialize(d.CapabilitySets)
-	d.LengthCombinedCapabilities = uint16(len(capsBytes)) + 2 + 2 // FIXME
+	d.LengthCombinedCapabilities = uint16(len(capsBytes)) + 2 + 2 // 2 bytes for NumberCapabilities, 2 bytes for Pad2Octets, plus capability sets
 	d.NumberCapabilities = uint16(len(d.CapabilitySets))
 	core.WriteLE(w, d.SharedId)
 	core.WriteLE(w, d.OriginatorId)

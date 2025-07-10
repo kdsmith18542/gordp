@@ -1,8 +1,8 @@
 package mcs
 
 import (
-	"github.com/GoFeGroup/gordp/core"
-	"github.com/GoFeGroup/gordp/glog"
+	"github.com/kdsmith18542/gordp/core"
+	"github.com/kdsmith18542/gordp/glog"
 	"io"
 )
 

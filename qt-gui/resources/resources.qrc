@@ -1,0 +1,16 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/app_icon.png</file>
+        <file>icons/connect.png</file>
+        <file>icons/disconnect.png</file>
+        <file>icons/settings.png</file>
+        <file>icons/performance.png</file>
+        <file>icons/history.png</file>
+        <file>icons/favorites.png</file>
+        <file>icons/plugins.png</file>
+        <file>icons/virtual_channels.png</file>
+        <file>icons/multimonitor.png</file>
+        <file>styles/dark.qss</file>
+        <file>styles/light.qss</file>
+    </qresource>
+</RCC> 

@@ -1,8 +1,9 @@
 package t128
 
 import (
-	"github.com/GoFeGroup/gordp/core"
 	"io"
+
+	"github.com/kdsmith18542/gordp/core"
 )
 
 // TsSetErrorInfoPDU
@@ -18,8 +19,8 @@ func (t *TsSetErrorInfoPDU) Read(r io.Reader) DataPDU {
 }
 
 func (t *TsSetErrorInfoPDU) Serialize() []byte {
-	//TODO implement me
-	panic("implement me")
+	// Serialize ErrorInfo as little-endian 32-bit integer
+	return core.ToLE(t.ErrorInfo)
 }
 
 func (t *TsSetErrorInfoPDU) Type2() uint8 {

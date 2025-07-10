@@ -6,7 +6,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/GoFeGroup/gordp/proto/t128"
+	"github.com/kdsmith18542/gordp/proto/t128"
 )
 
 // SendKeyEvent sends a keyboard event to the RDP server.
@@ -317,13 +317,13 @@ func (c *Client) SendMediaKey(keyName string) error {
 		keyCode = t128.VK_MEDIA_STOP
 	case "NEXT":
 		keyCode = t128.VK_MEDIA_NEXT_TRACK
-	case "PREV":
+	case "PREVIOUS":
 		keyCode = t128.VK_MEDIA_PREV_TRACK
-	case "VOLUME_UP":
+	case "VOLUMEUP":
 		keyCode = t128.VK_VOLUME_UP
-	case "VOLUME_DOWN":
+	case "VOLUMEDOWN":
 		keyCode = t128.VK_VOLUME_DOWN
-	case "VOLUME_MUTE":
+	case "MUTE":
 		keyCode = t128.VK_VOLUME_MUTE
 	default:
 		return fmt.Errorf("unsupported media key: %s", keyName)

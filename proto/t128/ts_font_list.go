@@ -1,8 +1,9 @@
 package t128
 
 import (
-	"github.com/GoFeGroup/gordp/core"
 	"io"
+
+	"github.com/kdsmith18542/gordp/core"
 )
 
 // TsFontListPDU
@@ -15,8 +16,12 @@ type TsFontListPDU struct {
 }
 
 func (t *TsFontListPDU) Read(r io.Reader) DataPDU {
-	//TODO implement me
-	panic("implement me")
+	// Read all fields as little-endian
+	t.NumberFonts = core.ReadLE(r, t.NumberFonts)
+	t.TotalNumFonts = core.ReadLE(r, t.TotalNumFonts)
+	t.ListFlags = core.ReadLE(r, t.ListFlags)
+	t.EntrySize = core.ReadLE(r, t.EntrySize)
+	return t
 }
 
 func (t *TsFontListPDU) iDataPDU() {}

@@ -5,7 +5,7 @@ import (
 	"image"
 	"image/png"
 
-	"github.com/GoFeGroup/gordp/core"
+	"github.com/kdsmith18542/gordp/core"
 )
 
 import "C"

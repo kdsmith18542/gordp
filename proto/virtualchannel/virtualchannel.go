@@ -6,8 +6,8 @@ import (
 	"io"
 	"sync"
 
-	"github.com/GoFeGroup/gordp/core"
-	"github.com/GoFeGroup/gordp/glog"
+	"github.com/kdsmith18542/gordp/core"
+	"github.com/kdsmith18542/gordp/glog"
 )
 
 // VirtualChannel represents a virtual channel in RDP

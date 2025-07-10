@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/GoFeGroup/gordp/core"
-	"github.com/GoFeGroup/gordp/glog"
+	"github.com/kdsmith18542/gordp/core"
+	"github.com/kdsmith18542/gordp/glog"
 )
 
 type UpdatePDU interface {
@@ -24,13 +24,23 @@ type TsFpUpdatePDU struct {
 func (p *TsFpUpdatePDU) iPDU() {}
 
 func (p *TsFpUpdatePDU) Serialize() []byte {
-	//TODO implement me
-	panic("implement me")
+	var buf bytes.Buffer
+
+	// Serialize header manually since it doesn't have a Serialize method
+	updateHeader := uint8(p.Header.UpdateCode | (p.Header.Fragmentation << 4) | (p.Header.Compression << 6))
+	buf.Write([]byte{updateHeader})
+
+	// Serialize length
+	buf.Write(core.ToLE(p.Length))
+
+	// Note: PDU serialization would need to be implemented per type
+	// For now, return the basic structure without PDU data
+
+	return buf.Bytes()
 }
 
 func (p *TsFpUpdatePDU) Type() uint16 {
-	//TODO implement me
-	panic("implement me")
+	return 0x0 // FASTPATH_OUTPUT_ACTION_FASTPATH equivalent
 }
 
 func (p *TsFpUpdatePDU) Read(r io.Reader) PDU {

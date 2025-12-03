@@ -113,11 +113,11 @@ type AdvancedVirtualChannel struct {
 	Compression bool
 	Encryption  bool
 	Statistics  *ChannelStatistics
-	Handler     VirtualChannelHandler
+	Handler     AdvancedVirtualChannelHandler
 }
 
-// VirtualChannelHandler represents a virtual channel handler
-type VirtualChannelHandler interface {
+// AdvancedVirtualChannelHandler represents an advanced virtual channel handler
+type AdvancedVirtualChannelHandler interface {
 	HandleData(data []byte) ([]byte, error)
 	HandleEvent(event *VirtualChannelEvent) error
 	GetStatistics() *ChannelStatistics
@@ -245,7 +245,7 @@ func (manager *AdvancedVirtualChannelManager) initializeDefaultChannels() {
 }
 
 // createChannel creates a new virtual channel
-func (manager *AdvancedVirtualChannelManager) createChannel(id, name string, channelType VirtualChannelType, handler VirtualChannelHandler) {
+func (manager *AdvancedVirtualChannelManager) createChannel(id, name string, channelType VirtualChannelType, handler AdvancedVirtualChannelHandler) {
 	channel := &AdvancedVirtualChannel{
 		ID:          id,
 		Name:        name,

@@ -28,11 +28,11 @@ const (
 	IMETypeHindi            // Hindi (Devanagari)
 )
 
-// IMEState represents the current state of the IME
-type IMEState int
+// IMEStateEnum represents the current state of the IME
+type IMEStateEnum int
 
 const (
-	IMEStateInactive IMEState = iota
+	IMEStateInactive IMEStateEnum = iota
 	IMEStateComposing
 	IMEStateCandidate
 	IMEStateConverting
@@ -58,7 +58,7 @@ type IMEComposition struct {
 // IMEManager manages input method editing
 type IMEManager struct {
 	imeType     IMEType
-	state       IMEState
+	state       IMEStateEnum
 	composition IMEComposition
 	history     []string
 	maxHistory  int
@@ -118,7 +118,7 @@ func (manager *IMEManager) IsEnabled() bool {
 }
 
 // GetState returns the current IME state
-func (manager *IMEManager) GetState() IMEState {
+func (manager *IMEManager) GetState() IMEStateEnum {
 	return manager.state
 }
 

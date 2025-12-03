@@ -297,7 +297,7 @@ func (manager *AccessibilityManager) initializeThemes() {
 		Spacing: map[string]int{
 			"padding":     8,
 			"margin":      16,
-			"line-height": 1.5,
+			"line-height": 150, // Note: stored as percentage (150 = 1.5x)
 		},
 		Contrast: 4.5,
 		Enabled:  true,
@@ -323,7 +323,7 @@ func (manager *AccessibilityManager) initializeThemes() {
 		Spacing: map[string]int{
 			"padding":     12,
 			"margin":      20,
-			"line-height": 1.8,
+			"line-height": 180, // Note: stored as percentage (180 = 1.8x)
 		},
 		Contrast: 21.0,
 		Enabled:  true,
@@ -349,7 +349,7 @@ func (manager *AccessibilityManager) initializeThemes() {
 		Spacing: map[string]int{
 			"padding":     8,
 			"margin":      16,
-			"line-height": 1.6,
+			"line-height": 160, // Note: stored as percentage (160 = 1.6x)
 		},
 		Contrast: 7.0,
 		Enabled:  true,
@@ -375,7 +375,7 @@ func (manager *AccessibilityManager) initializeThemes() {
 		Spacing: map[string]int{
 			"padding":     10,
 			"margin":      18,
-			"line-height": 1.7,
+			"line-height": 170, // Note: stored as percentage (170 = 1.7x)
 		},
 		Contrast: 8.0,
 		Enabled:  true,
@@ -1132,6 +1132,7 @@ func (manager *AccessibilityManager) ExportAccessibilityReport(format string, fi
 
 	// This is a simplified implementation
 	// In a real implementation, this would export in various formats
+	_ = report // TODO: Implement actual export functionality
 
 	glog.Infof("Accessibility report exported to %s", filename)
 	return nil

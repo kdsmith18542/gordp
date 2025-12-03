@@ -39,7 +39,8 @@ func (header *Header) Read(r io.Reader) {
 func Connect(w io.Writer, pduType uint8, data []byte) {
 	core.ThrowIf(len(data) > 0xf9, fmt.Errorf("invalid data length: %v, can't be more than 0xf9", len(data)))
 	header := &Header{uint8(6 + len(data)), pduType, 0, 0, 0}
-	buf := new(bytes.Buffer)
+	// Pre-allocate buffer: header size (7 bytes) + data length
+	buf := bytes.NewBuffer(make([]byte, 0, 7+len(data)))
 	header.Write(buf)
 	core.WriteFull(buf, data)
 	glog.Debugf("x224 write: %x", buf.Bytes())

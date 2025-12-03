@@ -246,8 +246,6 @@ func (manager *AdvancedSecurityManager) detectSmartCardReaders() []string {
 	// In a real implementation, this would use platform-specific APIs
 	// like Windows Smart Card API, PC/SC on Linux, etc.
 
-	readers := []string{}
-
 	// Check for common smart card reader paths
 	commonPaths := []string{
 		"/dev/usb/hiddev0",
@@ -256,6 +254,8 @@ func (manager *AdvancedSecurityManager) detectSmartCardReaders() []string {
 		"/dev/pcsc",
 	}
 
+	// Pre-allocate with max possible capacity to avoid reallocations
+	readers := make([]string, 0, len(commonPaths))
 	for _, path := range commonPaths {
 		if _, err := os.Stat(path); err == nil {
 			readers = append(readers, path)
@@ -368,8 +368,6 @@ func (manager *AdvancedSecurityManager) detectBiometricDevices() []string {
 	// In a real implementation, this would use platform-specific APIs
 	// like Windows Biometric Framework, libfprint on Linux, etc.
 
-	devices := []string{}
-
 	// Check for common biometric device paths
 	commonPaths := []string{
 		"/dev/usb/hiddev0",
@@ -378,6 +376,8 @@ func (manager *AdvancedSecurityManager) detectBiometricDevices() []string {
 		"/dev/fingerprint",
 	}
 
+	// Pre-allocate with max possible capacity to avoid reallocations
+	devices := make([]string, 0, len(commonPaths))
 	for _, path := range commonPaths {
 		if _, err := os.Stat(path); err == nil {
 			devices = append(devices, path)

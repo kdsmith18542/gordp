@@ -25,7 +25,8 @@ func (j *ClientChannelJoin) Write(w io.Writer) {
 }
 
 func (j *ClientChannelJoin) Serialize() []byte {
-	buff := new(bytes.Buffer)
+	// Pre-allocate buffer: typically 8 bytes for MCS header + channel join data
+	buff := bytes.NewBuffer(make([]byte, 0, 16))
 	j.Write(buff)
 	return buff.Bytes()
 }

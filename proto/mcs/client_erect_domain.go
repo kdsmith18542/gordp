@@ -15,7 +15,8 @@ func (e *ClientErectDomain) Write(w io.Writer) {
 }
 
 func (e *ClientErectDomain) Serialize() []byte {
-	buff := new(bytes.Buffer)
+	// Pre-allocate buffer: small fixed-size message (typically < 16 bytes)
+	buff := bytes.NewBuffer(make([]byte, 0, 16))
 	e.Write(buff)
 	return buff.Bytes()
 }

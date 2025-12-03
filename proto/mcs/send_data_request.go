@@ -22,7 +22,9 @@ func (r *SendDataRequest) Write(w io.Writer, data []byte) {
 }
 
 func (r *SendDataRequest) Serialize(data []byte) []byte {
-	buff := new(bytes.Buffer)
+	// Pre-allocate buffer: header (8-10 bytes) + data length
+	estimatedSize := 10 + len(data)
+	buff := bytes.NewBuffer(make([]byte, 0, estimatedSize))
 	r.Write(buff, data)
 	return buff.Bytes()
 }

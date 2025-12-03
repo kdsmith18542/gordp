@@ -95,20 +95,8 @@ type Client struct {
 	monitors []mcs.MonitorLayout
 }
 
-func NewClient(opt *Option) *Client {
-	ctx, cancel := context.WithCancel(context.Background())
-	c := &Client{
-		option: Option{
-			Addr:           opt.Addr,
-			UserName:       opt.UserName,
-			Password:       opt.Password,
-			ConnectTimeout: opt.ConnectTimeout,
-			Monitors:       opt.Monitors,
-		},
-		ctx:      ctx,
-		cancel:   cancel,
-		monitors: opt.Monitors,
-	}
+// initializeClient is a helper function to initialize common client fields
+func initializeClient(c *Client) {
 	if c.option.ConnectTimeout == 0 {
 		c.option.ConnectTimeout = 5 * time.Second
 	}
@@ -142,7 +130,23 @@ func NewClient(opt *Option) *Client {
 		Name:  virtualchannel.CHANNEL_NAME_RDPDR,
 		Flags: virtualchannel.CHANNEL_FLAG_FIRST | virtualchannel.CHANNEL_FLAG_LAST,
 	})
+}
 
+func NewClient(opt *Option) *Client {
+	ctx, cancel := context.WithCancel(context.Background())
+	c := &Client{
+		option: Option{
+			Addr:           opt.Addr,
+			UserName:       opt.UserName,
+			Password:       opt.Password,
+			ConnectTimeout: opt.ConnectTimeout,
+			Monitors:       opt.Monitors,
+		},
+		ctx:      ctx,
+		cancel:   cancel,
+		monitors: opt.Monitors,
+	}
+	initializeClient(c)
 	return c
 }
 
@@ -161,40 +165,7 @@ func NewClientWithContext(ctx context.Context, opt *Option) *Client {
 		cancel:   cancel,
 		monitors: opt.Monitors,
 	}
-	if c.option.ConnectTimeout == 0 {
-		c.option.ConnectTimeout = 5 * time.Second
-	}
-	c.vcManager = virtualchannel.NewVirtualChannelManager()
-	c.vcHandlers = make(map[string]virtualchannel.VirtualChannelHandler)
-	c.dvcManager = drdynvc.NewDynamicVirtualChannelManager()
-	c.dvcHandlers = make(map[string]drdynvc.DynamicVirtualChannelHandler)
-	c.bitmapCacheManager = t128.NewBitmapCacheManager()
-	c.offscreenBitmapManager = t128.NewOffscreenBitmapManager(7680, 100) // Default values
-	c.clipboardManager = clipboard.NewClipboardManager(nil)
-	c.deviceManager = device.NewDeviceManager(nil)
-
-	// Register default virtual channels
-	_ = c.vcManager.RegisterChannel(&virtualchannel.VirtualChannel{
-		ID:    1,
-		Name:  virtualchannel.CHANNEL_NAME_CLIPRDR,
-		Flags: virtualchannel.CHANNEL_FLAG_FIRST | virtualchannel.CHANNEL_FLAG_LAST,
-	})
-	_ = c.vcManager.RegisterChannel(&virtualchannel.VirtualChannel{
-		ID:    2,
-		Name:  virtualchannel.CHANNEL_NAME_RDPSND,
-		Flags: virtualchannel.CHANNEL_FLAG_FIRST | virtualchannel.CHANNEL_FLAG_LAST,
-	})
-	_ = c.vcManager.RegisterChannel(&virtualchannel.VirtualChannel{
-		ID:    3,
-		Name:  virtualchannel.CHANNEL_NAME_DRDYNVC,
-		Flags: virtualchannel.CHANNEL_FLAG_FIRST | virtualchannel.CHANNEL_FLAG_LAST,
-	})
-	_ = c.vcManager.RegisterChannel(&virtualchannel.VirtualChannel{
-		ID:    4,
-		Name:  virtualchannel.CHANNEL_NAME_RDPDR,
-		Flags: virtualchannel.CHANNEL_FLAG_FIRST | virtualchannel.CHANNEL_FLAG_LAST,
-	})
-
+	initializeClient(c)
 	return c
 }
 
@@ -805,7 +776,8 @@ func (c *Client) RegisterDynamicVirtualChannelHandler(channelName string, handle
 
 // ListDynamicVirtualChannels returns a list of currently open DVCs
 func (c *Client) ListDynamicVirtualChannels() []string {
-	channels := []string{}
+	// Pre-allocate slice with exact capacity to avoid reallocations
+	channels := make([]string, 0, len(c.dvcManager.Channels))
 	for _, ch := range c.dvcManager.Channels {
 		channels = append(channels, ch.ChannelName)
 	}

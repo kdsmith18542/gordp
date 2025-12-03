@@ -42,7 +42,9 @@ type ClientNetworkData struct {
 }
 
 func (networkData *ClientNetworkData) Serialize() []byte {
-	buff := new(bytes.Buffer)
+	// Pre-allocate buffer: header (8 bytes) + count (4 bytes) + channels (12 bytes each)
+	estimatedSize := 12 + (len(networkData.ChannelDefArray) * 12)
+	buff := bytes.NewBuffer(make([]byte, 0, estimatedSize))
 	core.WriteLE(buff, networkData.Header)
 	core.WriteLE(buff, networkData.ChannelCount)
 	for _, v := range networkData.ChannelDefArray {

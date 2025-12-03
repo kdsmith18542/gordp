@@ -505,6 +505,12 @@ func (manager *AdvancedSecurityManager) GetCertificateInfo(serialNumber string) 
 		return nil, err
 	}
 
+	// Convert IP addresses to strings
+	ipAddresses := make([]string, len(cert.IPAddresses))
+	for i, ip := range cert.IPAddresses {
+		ipAddresses[i] = ip.String()
+	}
+
 	info := &CertificateInfo{
 		Subject:      cert.Subject.String(),
 		Issuer:       cert.Issuer.String(),
@@ -514,7 +520,7 @@ func (manager *AdvancedSecurityManager) GetCertificateInfo(serialNumber string) 
 		KeyUsage:     cert.KeyUsage,
 		ExtKeyUsage:  cert.ExtKeyUsage,
 		DNSNames:     cert.DNSNames,
-		IPAddresses:  cert.IPAddresses,
+		IPAddresses:  ipAddresses,
 	}
 
 	return info, nil

@@ -177,6 +177,12 @@ const (
 	VK_OEM_6      = 0xDD // ]} key
 	VK_OEM_7      = 0xDE // '" key
 	VK_OEM_8      = 0xDF // Various keys
+	VK_OEM_9      = 0xE0 // Additional OEM key
+	VK_OEM_10     = 0xE1 // Additional OEM key
+	VK_OEM_11     = 0xE2 // Additional OEM key
+	VK_OEM_12     = 0xE3 // Additional OEM key
+	VK_OEM_13     = 0xE4 // Additional OEM key
+	VK_OEM_14     = 0xE5 // Additional OEM key
 )
 
 // KeyMap maps ASCII and common symbols to virtual key codes.

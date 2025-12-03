@@ -94,7 +94,7 @@ func readFastPathKeyboardEvent(r io.Reader, eventFlags uint8) TsFpInputEvent {
 	var keyCode uint8
 	core.ReadLE(r, &keyCode)
 
-	down := (eventFlags & 0x01) != 0
+	_ = (eventFlags & 0x01) != 0 // down flag - reserved for future use
 
 	return &TsFpKeyboardEvent{
 		EventHeader: eventFlags,
@@ -120,7 +120,7 @@ func readFastPathUnicodeEvent(r io.Reader, eventFlags uint8) TsFpInputEvent {
 	var unicodeCode uint16
 	core.ReadLE(r, &unicodeCode)
 
-	down := (eventFlags & 0x01) != 0
+	_ = (eventFlags & 0x01) != 0 // down flag - reserved for future use
 
 	return &TsFpUnicodeEvent{
 		EventHeader: eventFlags,

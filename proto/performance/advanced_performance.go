@@ -812,7 +812,7 @@ func (manager *AdvancedPerformanceManager) checkThresholds() {
 			manager.alerts = manager.alerts[1:]
 		}
 
-		glog.Warningf("Performance alert: %s", alert.Message)
+		glog.Warnf("Performance alert: %s", alert.Message)
 	}
 }
 

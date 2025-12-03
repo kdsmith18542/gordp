@@ -598,6 +598,8 @@ func createHindiLayout() *KeyboardLayout {
 		Script:   "Devanagari",
 		KeyMap: map[rune]uint8{
 			// Devanagari letters (simplified mapping)
+			// Note: Multi-character compound letters like 'क़' and 'ज़' are not supported in rune literals
+			// and should be handled via IME composition instead
 			'अ': VK_A, 'ब': VK_B, 'च': VK_C, 'द': VK_D, 'ए': VK_E,
 			'फ': VK_F, 'ग': VK_G, 'ह': VK_H, 'इ': VK_I, 'ज': VK_J,
 			'क': VK_K, 'ल': VK_L, 'म': VK_M, 'न': VK_N, 'ओ': VK_O,

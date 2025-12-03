@@ -96,7 +96,7 @@ type Client struct {
 }
 
 // initializeClient is a helper function to initialize common client fields
-func initializeClient(c *Client, opt *Option) {
+func initializeClient(c *Client) {
 	if c.option.ConnectTimeout == 0 {
 		c.option.ConnectTimeout = 5 * time.Second
 	}
@@ -146,7 +146,7 @@ func NewClient(opt *Option) *Client {
 		cancel:   cancel,
 		monitors: opt.Monitors,
 	}
-	initializeClient(c, opt)
+	initializeClient(c)
 	return c
 }
 
@@ -165,7 +165,7 @@ func NewClientWithContext(ctx context.Context, opt *Option) *Client {
 		cancel:   cancel,
 		monitors: opt.Monitors,
 	}
-	initializeClient(c, opt)
+	initializeClient(c)
 	return c
 }
 

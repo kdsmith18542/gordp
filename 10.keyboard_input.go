@@ -6,6 +6,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/kdsmith18542/gordp/glog"
 	"github.com/kdsmith18542/gordp/proto/t128"
 )
 
@@ -106,21 +107,31 @@ func (c *Client) SendKeyPress(keyCode uint8, modifiers t128.ModifierKey) error {
 	}
 
 	// Release modifier keys if they were pressed
+	// Use best-effort approach for releasing modifiers to avoid blocking on release failures
 	if modifiers.Shift {
 		event := t128.NewFastPathKeyboardEvent(t128.VK_SHIFT, false)
-		_ = c.sendInputEvent(event) // Best effort
+		if err := c.sendInputEvent(event); err != nil {
+			// Log but don't fail - modifier release is best-effort
+			glog.Debugf("failed to release Shift modifier: %v", err)
+		}
 	}
 	if modifiers.Control {
 		event := t128.NewFastPathKeyboardEvent(t128.VK_CONTROL, false)
-		_ = c.sendInputEvent(event) // Best effort
+		if err := c.sendInputEvent(event); err != nil {
+			glog.Debugf("failed to release Control modifier: %v", err)
+		}
 	}
 	if modifiers.Alt {
 		event := t128.NewFastPathKeyboardEvent(t128.VK_MENU, false)
-		_ = c.sendInputEvent(event) // Best effort
+		if err := c.sendInputEvent(event); err != nil {
+			glog.Debugf("failed to release Alt modifier: %v", err)
+		}
 	}
 	if modifiers.Meta {
 		event := t128.NewFastPathKeyboardEvent(t128.VK_LWIN, false)
-		_ = c.sendInputEvent(event) // Best effort
+		if err := c.sendInputEvent(event); err != nil {
+			glog.Debugf("failed to release Meta modifier: %v", err)
+		}
 	}
 
 	return nil

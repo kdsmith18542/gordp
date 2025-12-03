@@ -65,11 +65,65 @@ func (c *Client) SendKeyEvent(keyCode uint8, down bool, modifiers t128.ModifierK
 }
 
 // SendKeyPress sends a key press and release event.
+// Optimized to avoid redundant modifier key presses/releases
 func (c *Client) SendKeyPress(keyCode uint8, modifiers t128.ModifierKey) error {
-	if err := c.SendKeyEvent(keyCode, true, modifiers); err != nil {
+	// Handle modifier keys first if needed
+	if modifiers.Shift {
+		event := t128.NewFastPathKeyboardEvent(t128.VK_SHIFT, true)
+		if err := c.sendInputEvent(event); err != nil {
+			return err
+		}
+	}
+	if modifiers.Control {
+		event := t128.NewFastPathKeyboardEvent(t128.VK_CONTROL, true)
+		if err := c.sendInputEvent(event); err != nil {
+			return err
+		}
+	}
+	if modifiers.Alt {
+		event := t128.NewFastPathKeyboardEvent(t128.VK_MENU, true)
+		if err := c.sendInputEvent(event); err != nil {
+			return err
+		}
+	}
+	if modifiers.Meta {
+		event := t128.NewFastPathKeyboardEvent(t128.VK_LWIN, true)
+		if err := c.sendInputEvent(event); err != nil {
+			return err
+		}
+	}
+
+	// Send key down
+	event := t128.NewFastPathKeyboardEvent(keyCode, true)
+	if err := c.sendInputEvent(event); err != nil {
 		return err
 	}
-	return c.SendKeyEvent(keyCode, false, modifiers)
+
+	// Send key up
+	event = t128.NewFastPathKeyboardEvent(keyCode, false)
+	if err := c.sendInputEvent(event); err != nil {
+		return err
+	}
+
+	// Release modifier keys if they were pressed
+	if modifiers.Shift {
+		event := t128.NewFastPathKeyboardEvent(t128.VK_SHIFT, false)
+		_ = c.sendInputEvent(event) // Best effort
+	}
+	if modifiers.Control {
+		event := t128.NewFastPathKeyboardEvent(t128.VK_CONTROL, false)
+		_ = c.sendInputEvent(event) // Best effort
+	}
+	if modifiers.Alt {
+		event := t128.NewFastPathKeyboardEvent(t128.VK_MENU, false)
+		_ = c.sendInputEvent(event) // Best effort
+	}
+	if modifiers.Meta {
+		event := t128.NewFastPathKeyboardEvent(t128.VK_LWIN, false)
+		_ = c.sendInputEvent(event) // Best effort
+	}
+
+	return nil
 }
 
 // SendString sends a string of characters as key events.

@@ -203,7 +203,9 @@ func ReadDynamicVirtualChannelMessage(r io.Reader) (*DynamicVirtualChannelMessag
 
 // Serialize serializes the dynamic virtual channel message
 func (m *DynamicVirtualChannelMessage) Serialize() []byte {
-	buf := new(bytes.Buffer)
+	// Pre-allocate buffer with estimated size to avoid reallocations
+	estimatedSize := 4 + len(m.Data) // 4 bytes for MessageType + data length
+	buf := bytes.NewBuffer(make([]byte, 0, estimatedSize))
 	core.WriteLE(buf, m.MessageType)
 	if len(m.Data) > 0 {
 		buf.Write(m.Data)
@@ -333,7 +335,9 @@ func ParseDataMessage(data []byte) (*DataMessage, error) {
 
 // SerializeCreateRequest serializes a create request
 func (req *CreateRequest) Serialize() []byte {
-	buf := new(bytes.Buffer)
+	// Pre-allocate buffer: 4 (RequestId) + 4 (ChannelId) + name length + 1 (null terminator)
+	estimatedSize := 8 + len(req.ChannelName) + 1
+	buf := bytes.NewBuffer(make([]byte, 0, estimatedSize))
 	core.WriteLE(buf, req.RequestId)
 	core.WriteLE(buf, req.ChannelId)
 	buf.WriteString(req.ChannelName)
@@ -343,7 +347,8 @@ func (req *CreateRequest) Serialize() []byte {
 
 // SerializeCreateResponse serializes a create response
 func (resp *CreateResponse) Serialize() []byte {
-	buf := new(bytes.Buffer)
+	// Pre-allocate buffer: 4 (RequestId) + 4 (ChannelId) + 4 (Status)
+	buf := bytes.NewBuffer(make([]byte, 0, 12))
 	core.WriteLE(buf, resp.RequestId)
 	core.WriteLE(buf, resp.ChannelId)
 	core.WriteLE(buf, resp.Status)
@@ -352,7 +357,8 @@ func (resp *CreateResponse) Serialize() []byte {
 
 // SerializeOpenRequest serializes an open request
 func (req *OpenRequest) Serialize() []byte {
-	buf := new(bytes.Buffer)
+	// Pre-allocate buffer: 4 (RequestId) + 4 (ChannelId)
+	buf := bytes.NewBuffer(make([]byte, 0, 8))
 	core.WriteLE(buf, req.RequestId)
 	core.WriteLE(buf, req.ChannelId)
 	return buf.Bytes()
@@ -360,7 +366,8 @@ func (req *OpenRequest) Serialize() []byte {
 
 // SerializeOpenResponse serializes an open response
 func (resp *OpenResponse) Serialize() []byte {
-	buf := new(bytes.Buffer)
+	// Pre-allocate buffer: 4 (RequestId) + 4 (ChannelId) + 4 (Status)
+	buf := bytes.NewBuffer(make([]byte, 0, 12))
 	core.WriteLE(buf, resp.RequestId)
 	core.WriteLE(buf, resp.ChannelId)
 	core.WriteLE(buf, resp.Status)
@@ -369,7 +376,8 @@ func (resp *OpenResponse) Serialize() []byte {
 
 // SerializeCloseRequest serializes a close request
 func (req *CloseRequest) Serialize() []byte {
-	buf := new(bytes.Buffer)
+	// Pre-allocate buffer: 4 (RequestId) + 4 (ChannelId)
+	buf := bytes.NewBuffer(make([]byte, 0, 8))
 	core.WriteLE(buf, req.RequestId)
 	core.WriteLE(buf, req.ChannelId)
 	return buf.Bytes()
@@ -377,7 +385,8 @@ func (req *CloseRequest) Serialize() []byte {
 
 // SerializeCloseResponse serializes a close response
 func (resp *CloseResponse) Serialize() []byte {
-	buf := new(bytes.Buffer)
+	// Pre-allocate buffer: 4 (RequestId) + 4 (ChannelId) + 4 (Status)
+	buf := bytes.NewBuffer(make([]byte, 0, 12))
 	core.WriteLE(buf, resp.RequestId)
 	core.WriteLE(buf, resp.ChannelId)
 	core.WriteLE(buf, resp.Status)
@@ -386,7 +395,9 @@ func (resp *CloseResponse) Serialize() []byte {
 
 // SerializeDataMessage serializes a data message
 func (msg *DataMessage) Serialize() []byte {
-	buf := new(bytes.Buffer)
+	// Pre-allocate buffer: 4 (ChannelId) + data length
+	estimatedSize := 4 + len(msg.Data)
+	buf := bytes.NewBuffer(make([]byte, 0, estimatedSize))
 	core.WriteLE(buf, msg.ChannelId)
 	buf.Write(msg.Data)
 	return buf.Bytes()

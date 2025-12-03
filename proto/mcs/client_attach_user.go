@@ -12,7 +12,8 @@ func (c *ClientAttachUser) Write(w io.Writer) {
 }
 
 func (c *ClientAttachUser) Serialize() []byte {
-	buff := new(bytes.Buffer)
+	// Pre-allocate buffer: small fixed-size message (typically < 8 bytes)
+	buff := bytes.NewBuffer(make([]byte, 0, 8))
 	c.Write(buff)
 	return buff.Bytes()
 }

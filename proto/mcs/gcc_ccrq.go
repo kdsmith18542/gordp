@@ -34,7 +34,9 @@ func (req *GccConferenceCreateRequest) Write(w io.Writer, userData []byte) {
 }
 
 func (req *GccConferenceCreateRequest) Serialize(userData []byte) []byte {
-	buff := new(bytes.Buffer)
+	// Pre-allocate buffer: 14 bytes overhead + userData length
+	estimatedSize := 14 + len(userData)
+	buff := bytes.NewBuffer(make([]byte, 0, estimatedSize))
 	req.Write(buff, userData)
 	glog.Debugf("ccr: len: %v, userData: %v", buff.Len(), len(userData))
 	return buff.Bytes()

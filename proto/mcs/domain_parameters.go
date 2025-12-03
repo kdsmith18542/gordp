@@ -30,7 +30,8 @@ func (p *DomainParameters) Write(w io.Writer) {
 }
 
 func (p *DomainParameters) Serialize() []byte {
-	buff := new(bytes.Buffer)
+	// Pre-allocate buffer: 8 integers, typically 3-5 bytes each in BER encoding
+	buff := bytes.NewBuffer(make([]byte, 0, 40))
 	p.Write(buff)
 	glog.Debugf("DomainParameters: %x", buff.Bytes())
 	return buff.Bytes()

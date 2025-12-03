@@ -113,23 +113,3 @@ func GetErrorContext(err error) string {
 	}
 	return fmt.Sprintf("Error: %v\nStack trace:\n%s", err, debug.Stack())
 }
-
-// CreateRDPError creates a new RDP error with context
-func CreateRDPError(errType ErrorType, message string, cause error) *RDPError {
-	return &RDPError{
-		Type:    errType,
-		Message: message,
-		Cause:   cause,
-		Context: make(map[string]interface{}),
-	}
-}
-
-// CreateRDPErrorWithContext creates a new RDP error with additional context
-func CreateRDPErrorWithContext(errType ErrorType, message string, cause error, context map[string]interface{}) *RDPError {
-	return &RDPError{
-		Type:    errType,
-		Message: message,
-		Cause:   cause,
-		Context: context,
-	}
-}
